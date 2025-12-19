@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
         // 1. Data Prep for Timestamps
         // We use JS Date to be DB-agnostic for calculations, then save as ISO string or timestamp
         const now = new Date();
-        const { expiresAt, dropActiveAt } = calculateTemporalTimestamps(now);
+        const { expires_at, drop_active_at } = calculateTemporalTimestamps(now);
 
         // 2. Rate Limit Check (Postgres)
         // Check if user posted in last 2 hours (Cooldown) 
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
             )
             VALUES (
                 ${id}, ${content}, ${user.college_id}, ${device_id}, ${status}, ${tag}, ${publicId},
-                ${expiresAt.toISOString()}, ${dropActiveAt.toISOString()}, ${now.toISOString()}
+                ${expires_at}, ${drop_active_at}, ${now.toISOString()}
             )
         `;
 
