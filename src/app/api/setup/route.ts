@@ -21,6 +21,32 @@ export async function GET(req: NextRequest) {
             await sql`DROP TABLE IF EXISTS users CASCADE`;
         }
 
+        // 0. Colleges Table (New for database-driven college info)
+        await sql`
+            CREATE TABLE IF NOT EXISTS colleges (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                city TEXT
+            );
+        `;
+
+        // Seed Colleges if empty
+        const collegesRes = await sql`SELECT COUNT(*) FROM colleges`;
+        if (parseInt(collegesRes.rows[0].count) === 0) {
+            console.log("Seeding colleges...");
+            // We use a simplified seed for the setup route
+            const defaultColleges = [
+                ['rvce', 'RV College of Engineering', 'Bengaluru'],
+                ['bmsce', 'BMS College of Engineering', 'Bengaluru'],
+                ['pes-rr', 'PES University (RR Campus)', 'Bengaluru'],
+                ['msrit', 'Ramaiah Institute of Technology', 'Bengaluru'],
+                ['mit-manipal', 'Manipal Institute of Technology', 'Manipal']
+            ];
+            for (const [id, name, city] of defaultColleges) {
+                await sql`INSERT INTO colleges (id, name, city) VALUES (${id}, ${name}, ${city}) ON CONFLICT DO NOTHING`;
+            }
+        }
+
         // 1. Users Table
         await sql`
             CREATE TABLE IF NOT EXISTS users (
@@ -36,6 +62,18 @@ export async function GET(req: NextRequest) {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `;
+
+        // Users Migrations
+        try {
+            await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS handle TEXT UNIQUE`;
+            await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT`;
+            await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT`;
+            await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS college_id TEXT`;
+            await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS coins INTEGER DEFAULT 100`;
+            await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS shadow_banned BOOLEAN DEFAULT FALSE`;
+        } catch (e) {
+            console.log("Users migration error:", e);
+        }
 
         // 2. Confessions Table
         await sql`
@@ -56,11 +94,14 @@ export async function GET(req: NextRequest) {
             );
         `;
 
-        // Migration: Add image column if it doesn't exist in older DBs
+        // Confessions Migrations
         try {
             await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS image TEXT`;
+            await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS public_id TEXT`;
+            await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP`;
+            await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS drop_active_at TIMESTAMP`;
         } catch (e) {
-            console.log("Migration (confessions.image) error:", e);
+            console.log("Confessions migration error:", e);
         }
 
         // 3. Votes Table
@@ -105,7 +146,6 @@ export async function GET(req: NextRequest) {
         // Migration: Ensure types match for foreign keys
         try {
             console.log("Running migrations...");
-            // Correct confession_id type if it was UUID
             await sql`ALTER TABLE comments ALTER COLUMN confession_id TYPE TEXT`;
             await sql`ALTER TABLE comments ADD CONSTRAINT fk_confession FOREIGN KEY (confession_id) REFERENCES confessions(id) ON DELETE CASCADE`;
         } catch (e) {

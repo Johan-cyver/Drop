@@ -42,8 +42,15 @@ export async function GET(req: NextRequest) {
             posts: myPosts
         });
 
-    } catch (error) {
-        console.error('Profile Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch (error: any) {
+        console.error('Profile Error:', {
+            message: error.message,
+            stack: error.stack
+        });
+        return NextResponse.json({
+            error: 'Internal Server Error',
+            details: error.message,
+            hint: "Try visiting /api/setup to sync database schema."
+        }, { status: 500 });
     }
 }
