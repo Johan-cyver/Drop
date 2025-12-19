@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db, { Confession } from '@/lib/db';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
-        const query = searchParams.get('q'); // Search query
+        const queryTerm = searchParams.get('q'); // Search query
         const getTrending = searchParams.get('trending'); // If true, return tags
 
         if (getTrending === 'true') {
-            const tags = db.prepare(`
+            const tagsRes = await sql`
                 SELECT tag, COUNT(*) as count 
                 FROM confessions 
                 WHERE tag IS NOT NULL 
@@ -18,20 +18,20 @@ export async function GET(req: NextRequest) {
                 GROUP BY tag 
                 ORDER BY count DESC 
                 LIMIT 10
-            `).all();
-            return NextResponse.json({ tags });
+            `;
+            return NextResponse.json({ tags: tagsRes.rows });
         }
 
-        if (query) {
+        if (queryTerm) {
             // Search Logic
-            const posts = db.prepare(`
+            const postsRes = await sql`
                 SELECT * FROM confessions 
                 WHERE status = 'LIVE' 
-                AND (content LIKE ? OR tag = ?)
+                AND (content ILIKE ${'%' + queryTerm + '%'} OR tag = ${queryTerm})
                 ORDER BY created_at DESC
                 LIMIT 50
-            `).all(`%${query}%`, query) as Confession[];
-            return NextResponse.json({ results: posts });
+            `;
+            return NextResponse.json({ results: postsRes.rows });
         }
 
         return NextResponse.json({ message: 'Provide ?q=search or ?trending=true' });

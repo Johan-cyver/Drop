@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +11,7 @@ export async function GET(req: NextRequest) {
         if (!deviceId) return NextResponse.json({ error: 'Device ID required' }, { status: 400 });
 
         // Fetch upvotes on MY posts (excluding my own votes if any)
-        // Group by confession to say "X people liked your post..."
-        const notifications = db.prepare(`
+        const notificationsRes = await sql`
             SELECT 
                 c.id as confession_id, 
                 c.content, 
@@ -20,14 +19,16 @@ export async function GET(req: NextRequest) {
                 MAX(v.created_at) as last_activity
             FROM confessions c
             JOIN votes v ON v.confession_id = c.id
-            WHERE c.device_id = ? AND v.value = 1 AND v.device_id != ?
-            GROUP BY c.id
+            WHERE c.device_id = ${deviceId} AND v.value = 1 AND v.device_id != ${deviceId}
+            GROUP BY c.id, c.content
             ORDER BY last_activity DESC
             LIMIT 20
-        `).all(deviceId, deviceId) as { confession_id: string, content: string, count: number, last_activity: string }[];
+        `;
+
+        const notifications = notificationsRes.rows;
 
         const formatted = notifications.map(n => ({
-            id: n.confession_id, // simple key
+            id: n.confession_id,
             type: 'upvote',
             message: `${n.count} people liked your drop: "${n.content.slice(0, 20)}..."`,
             time: n.last_activity

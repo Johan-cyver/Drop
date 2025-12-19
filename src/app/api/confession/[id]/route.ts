@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db, { Confession } from '@/lib/db';
+import { sql } from '@/lib/db';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
@@ -9,20 +9,33 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
         if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
 
-        const post = db.prepare(`
+        const postRes = await sql`
             SELECT 
                 c.*, 
-                COALESCE(v.value, 0) as myVote
+                COALESCE(v.value, 0) as myVote,
+                u.handle,
+                u.avatar
             FROM confessions c
-            LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ?
-            WHERE c.id = ?
-        `).get(deviceId || '', id) as (Confession & { myVote: number }) | undefined;
+            LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
+            LEFT JOIN users u ON u.device_id = c.device_id
+            WHERE c.id = ${id}
+        `;
+
+        const post = postRes.rows[0];
 
         if (!post) {
             return NextResponse.json({ error: 'Confession not found' }, { status: 404 });
         }
 
-        return NextResponse.json(post);
+        // Standardize types
+        const formattedPost = {
+            ...post,
+            myVote: parseInt(post.myvote || '0'),
+            upvotes: post.upvotes || 0,
+            downvotes: post.downvotes || 0
+        };
+
+        return NextResponse.json(formattedPost);
 
     } catch (error) {
         console.error('Single Confession Error:', error);
