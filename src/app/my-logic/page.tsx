@@ -89,7 +89,7 @@ export default function MyLogicPage() {
                                     <img src={user.avatar} alt="Me" className="w-full h-full object-cover" />
                                 ) : (
                                     <span className="text-3xl font-bold text-white">{user?.avatar || 'Me'}</span>
-                                ) || '👻'}
+                                )}
                             </div>
                             <button
                                 onClick={() => {
