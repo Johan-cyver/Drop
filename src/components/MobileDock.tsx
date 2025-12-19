@@ -11,7 +11,7 @@ export default function MobileDock({ onCompose }: MobileDockProps) {
     const pathname = usePathname();
 
     const navItems = [
-        { icon: Home, label: 'Feed', href: '/', active: pathname === '/' },
+        { icon: Home, label: 'Confession', href: '/', active: pathname === '/' },
         { icon: Search, label: 'Discover', href: '/discover', active: pathname === '/discover' },
         { icon: Bell, label: 'Activity', href: '/notifications', active: pathname === '/notifications' },
         { icon: User, label: 'My Logic', href: '/my-logic', active: pathname === '/my-logic' },

@@ -22,7 +22,7 @@ export default function Navbar({ onCompose, onFeedback }: { onCompose: () => voi
 
 
     const navItems = [
-        { icon: Home, label: 'Feed', href: '/', active: pathname === '/' },
+        { icon: Home, label: 'Confession', href: '/', active: pathname === '/' },
         { icon: Compass, label: 'Discover', href: '/discover', active: pathname === '/discover' },
         { icon: Bell, label: 'Activity', href: '/notifications', active: pathname === '/notifications' },
         { icon: User, label: 'My Logic', href: '/my-logic', active: pathname === '/my-logic' },

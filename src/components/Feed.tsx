@@ -49,7 +49,7 @@ export default function Feed({ posts, onVote }: { posts: Post[], onVote: (id: st
 
                 {/* Desktop Header */}
                 <div className="hidden lg:flex justify-between items-center px-6 mb-6">
-                    <h2 className="text-xl font-bold uppercase tracking-widest">FEED</h2>
+                    <h2 className="text-xl font-bold uppercase tracking-widest">CONFESSION</h2>
                     <div className="flex gap-4">
                         <button
                             onClick={() => setFilter('new')}
