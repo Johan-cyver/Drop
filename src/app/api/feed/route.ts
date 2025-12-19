@@ -80,8 +80,13 @@ export async function GET(req: NextRequest) {
         console.error('Feed API Error:', {
             message: error.message,
             code: error.code,
-            detail: error.detail
+            detail: error.detail,
+            stack: error.stack
         });
-        return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
+        return NextResponse.json({
+            error: 'Internal Server Error',
+            details: error.message,
+            hint: "Try visiting /api/setup to sync database schema."
+        }, { status: 500 });
     }
 }
