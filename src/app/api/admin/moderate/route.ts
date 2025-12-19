@@ -3,6 +3,14 @@ import { sql } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
     try {
+        // Security Gate
+        const auth = req.headers.get('x-admin-secret');
+        const secret = process.env.ADMIN_SECRET || 'drop_admin_2024';
+
+        if (auth !== secret) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await req.json();
         const { action, target_id } = body;
 

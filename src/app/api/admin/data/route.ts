@@ -5,6 +5,14 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     try {
+        // Security Gate
+        const auth = req.headers.get('x-admin-secret');
+        const secret = process.env.ADMIN_SECRET || 'drop_admin_2024'; // Fallback for local
+
+        if (auth !== secret) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         // Fetch Users (Limit 50)
         const usersRes = await sql`
             SELECT device_id, handle, college_id, coins, pin_hash, shadow_banned, created_at
