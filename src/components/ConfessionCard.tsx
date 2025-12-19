@@ -1,4 +1,4 @@
-import { ArrowBigUp, ArrowBigDown, Send, Clock, Bookmark, Share2, Sparkles } from 'lucide-react';
+import { ArrowBigUp, ArrowBigDown, Send, Clock, Bookmark, Share2, Sparkles, MessageCircle } from 'lucide-react';
 import { cn, formatNumber, formatTime, formatCountdown, getTimeRemaining } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -21,6 +21,7 @@ export interface Post {
     expires_at?: string;
     drop_active_at?: string;
     isDropActive?: boolean;
+    comment_count?: number;
 }
 
 interface ConfessionCardProps {
@@ -165,6 +166,14 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <Link
+                            href={`/confession/${post.id}`}
+                            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-brand-glow border border-white/5 transition-all flex flex-col items-center justify-center gap-0.5"
+                        >
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="text-[10px] font-black">{post.comment_count || 0}</span>
+                        </Link>
+
                         <button
                             onClick={(e) => {
                                 e.preventDefault();
@@ -175,7 +184,9 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
                                     const newSaved = saved.filter((p: Post) => p.id !== post.id);
                                     localStorage.setItem('my_echoes', JSON.stringify(newSaved));
                                 } else {
-                                    localStorage.setItem('my_echoes', JSON.stringify([post, ...saved]));
+                                    // Strip comments before saving to Echoes
+                                    const { comments, ...sanitizedPost } = post as any;
+                                    localStorage.setItem('my_echoes', JSON.stringify([sanitizedPost, ...saved]));
                                 }
                                 window.dispatchEvent(new Event('storage'));
                             }}

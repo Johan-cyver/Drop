@@ -27,12 +27,25 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Confession not found' }, { status: 404 });
         }
 
+        // Fetch Comments
+        const commentsRes = await sql`
+            SELECT 
+                c.*,
+                u.handle,
+                u.avatar
+            FROM comments c
+            JOIN users u ON u.device_id = c.device_id
+            WHERE c.confession_id = ${id}
+            ORDER BY c.created_at ASC
+        `;
+
         // Standardize types
         const formattedPost = {
             ...post,
             myVote: parseInt(post.myvote || '0'),
             upvotes: post.upvotes || 0,
-            downvotes: post.downvotes || 0
+            downvotes: post.downvotes || 0,
+            comments: commentsRes.rows
         };
 
         return NextResponse.json(formattedPost);

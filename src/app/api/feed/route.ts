@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
                 c.*, 
                 COALESCE(v.value, 0) as myVote,
                 u.handle,
-                u.avatar
+                u.avatar,
+                (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count
             FROM confessions c
             LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
             LEFT JOIN users u ON u.device_id = c.device_id
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest) {
             myVote: parseInt(row.myvote || '0'), // PG returns bigint/numeric as string often
             upvotes: row.upvotes || 0,
             downvotes: row.downvotes || 0,
+            comment_count: parseInt(row.comment_count || '0'),
             isDropActive: false // Placeholder, calculated below
         }));
 

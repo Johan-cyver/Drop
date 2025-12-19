@@ -70,10 +70,21 @@ export async function GET(req: NextRequest) {
         // 4. Feedback Table
         await sql`
             CREATE TABLE IF NOT EXISTS feedback (
-                id TEXT PRIMARY KEY,
-                device_id TEXT,
-                message TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                device_id TEXT REFERENCES users(device_id),
+                message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        `;
+
+        // 5. Comments Table
+        await sql`
+            CREATE TABLE IF NOT EXISTS comments (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                confession_id UUID REFERENCES confessions(id) ON DELETE CASCADE,
+                device_id TEXT REFERENCES users(device_id),
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
             );
         `;
 

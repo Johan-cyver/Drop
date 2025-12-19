@@ -11,6 +11,7 @@ import ConfessionCard, { Post } from '@/components/ConfessionCard';
 import ComposeModal from '@/components/ComposeModal';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import CommentSection from '@/components/CommentSection';
 
 export default function SingleConfessionPage({ params }: { params: { id: string } }) {
     const [post, setPost] = useState<Post | null>(null);
@@ -93,7 +94,15 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
                             </div>
                         </div>
                     ) : post ? (
-                        <ConfessionCard post={post} onVote={handleVote} />
+                        <>
+                            <ConfessionCard post={post} onVote={handleVote} />
+                            <CommentSection
+                                confessionId={post.id}
+                                comments={(post as any).comments || []}
+                                deviceId={deviceId}
+                                onCommentAdded={() => fetchPost(deviceId)}
+                            />
+                        </>
                     ) : null}
                 </div>
             </main>
