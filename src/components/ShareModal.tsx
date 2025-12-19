@@ -19,6 +19,8 @@ const VIBES = [
     { name: 'Lava', class: 'bg-gradient-to-br from-red-600 via-orange-600 to-yellow-500', text: 'text-red-50' },
 ];
 
+import { QRCodeSVG } from 'qrcode.react';
+
 export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
     const [selectedVibe, setSelectedVibe] = useState(VIBES[0]);
     const [capturing, setCapturing] = useState(false);
@@ -26,7 +28,7 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
 
     if (!post) return null;
 
-    const shareUrl = `${window.location.origin}/confession/${post.id}`;
+    const shareUrl = `${window.location.host === 'localhost:3000' ? 'http' : 'https'}://${window.location.host}/confession/${post.id}`;
 
     const handleCopyLink = () => {
         navigator.clipboard.writeText(shareUrl);
@@ -37,17 +39,14 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
         if (!cardRef.current) return;
         setCapturing(true);
         try {
-            // Dynamic import to keep bundle size small for those who don't share
             const html2canvas = (await import('html2canvas')).default;
 
-            // Capture the card
             const canvas = await html2canvas(cardRef.current, {
                 useCORS: true,
-                scale: 3, // Very high res for stories
+                scale: 4, // Ultra high res for desktop/big screens
                 backgroundColor: null,
                 logging: false,
                 onclone: (clonedDoc) => {
-                    // Ensure the cloned element is visible for capture
                     const el = clonedDoc.querySelector('[data-share-card]');
                     if (el) (el as HTMLElement).style.borderRadius = '2.5rem';
                 }
@@ -56,7 +55,6 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
             const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!), 'image/png', 1.0));
             const file = new File([blob], `drop-${post.public_id}.png`, { type: 'image/png' });
 
-            // Check for native share support with files (mostly mobile)
             const canShareFiles = navigator.canShare && navigator.canShare({ files: [file] });
 
             if (canShareFiles) {
@@ -64,7 +62,6 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
                     files: [file]
                 });
             } else {
-                // Fallback for desktop: Download
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -73,7 +70,7 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                alert('Card saved! Now you can upload it to your Instagram/WhatsApp story.');
+                alert('Card saved to your device! 📸 Upload it to your story to share the vibe.');
             }
         } catch (err) {
             console.error('Capture failed', err);
@@ -109,25 +106,21 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
                                 selectedVibe.class
                             )}
                         >
-                            {/* Decorative elements */}
                             <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
                                 <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-white/20 blur-[100px] rounded-full" />
                                 <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-black/40 blur-[80px] rounded-full" />
                             </div>
 
-                            {/* Logo */}
                             <div className="flex items-center gap-3 mb-10 relative z-10">
                                 <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg">
                                     <Sparkles className="w-5 h-5 text-white" />
                                 </div>
-                                <span className="font-bold tracking-tighter text-white text-xl">THE DROP</span>
+                                <span className="font-bold tracking-tighter text-white text-xl uppercase italic">THE DROP</span>
                             </div>
 
-                            {/* Content Area */}
                             <div className="flex-1 flex flex-col justify-center relative z-10 px-2">
                                 <p className={cn(
-                                    "text-3xl md:text-3xl font-black leading-[1.15] tracking-tight text-white",
-                                    selectedVibe.name === 'Cosmic' || selectedVibe.name === 'Midnight' ? 'text-white' : ''
+                                    "text-3xl md:text-3xl font-black leading-[1.15] tracking-tight text-white"
                                 )}>
                                     "{post.content}"
                                 </p>
@@ -138,7 +131,6 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
                                 )}
                             </div>
 
-                            {/* Footer Info */}
                             <div className="mt-8 flex items-end justify-between relative z-10 border-t border-white/10 pt-6">
                                 <div className="flex flex-col">
                                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50 mb-1">Dropped via</span>
@@ -147,9 +139,16 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
                                         <span className="text-sm font-mono font-black text-white">{post.public_id}</span>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50 mb-1">Scan to reveal</span>
-                                    <div className="text-sm font-black text-white tracking-tighter">thedrop.app</div>
+                                <div className="flex flex-col items-end gap-2">
+                                    <div className="p-1.5 bg-white rounded-lg shadow-xl">
+                                        <QRCodeSVG
+                                            value={shareUrl}
+                                            size={48}
+                                            level="L"
+                                            includeMargin={false}
+                                        />
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50">Scan to Reveal</span>
                                 </div>
                             </div>
                         </div>
@@ -207,6 +206,9 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
                                 </div>
                             </div>
                         </div>
+                        <p className="text-center text-[11px] text-gray-600 uppercase tracking-widest font-black opacity-50 pb-4">
+                            Confession Card
+                        </p>
                     </motion.div>
                 </motion.div>
             )}
