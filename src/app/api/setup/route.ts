@@ -71,22 +71,38 @@ export async function GET(req: NextRequest) {
         await sql`
             CREATE TABLE IF NOT EXISTS feedback (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                device_id TEXT REFERENCES users(device_id),
+                device_id TEXT,
                 message TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT NOW()
             );
         `;
 
+        try {
+            await sql`ALTER TABLE feedback ADD CONSTRAINT fk_user_feedback FOREIGN KEY (device_id) REFERENCES users(device_id)`;
+        } catch (e) {
+            console.log("Migration (feedback) already applied or minor error:", e);
+        }
+
         // 5. Comments Table
         await sql`
             CREATE TABLE IF NOT EXISTS comments (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                confession_id TEXT REFERENCES confessions(id) ON DELETE CASCADE,
-                device_id TEXT REFERENCES users(device_id),
+                confession_id TEXT,
+                device_id TEXT,
                 content TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT NOW()
             );
         `;
+
+        // Migration: Ensure types match for foreign keys
+        try {
+            console.log("Running migrations...");
+            // Correct confession_id type if it was UUID
+            await sql`ALTER TABLE comments ALTER COLUMN confession_id TYPE TEXT`;
+            await sql`ALTER TABLE comments ADD CONSTRAINT fk_confession FOREIGN KEY (confession_id) REFERENCES confessions(id) ON DELETE CASCADE`;
+        } catch (e) {
+            console.log("Migration (comments) already applied or minor error:", e);
+        }
 
         return NextResponse.json({
             success: true,

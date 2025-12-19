@@ -75,8 +75,12 @@ export async function GET(req: NextRequest) {
             }
         });
 
-    } catch (error) {
-        console.error('Feed Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch (error: any) {
+        console.error('Feed API Error:', {
+            message: error.message,
+            code: error.code,
+            detail: error.detail
+        });
+        return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
     }
 }

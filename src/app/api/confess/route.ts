@@ -96,8 +96,16 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ success: true, id }, { status: 201 });
 
-    } catch (error) {
-        console.error('Confess Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch (error: any) {
+        console.error('Confess API Error:', {
+            message: error.message,
+            code: error.code,
+            detail: error.detail,
+            stack: error.stack
+        });
+        return NextResponse.json({
+            error: 'Internal Server Error',
+            details: error.message
+        }, { status: 500 });
     }
 }
