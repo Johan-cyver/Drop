@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
         await sql`
             CREATE TABLE IF NOT EXISTS comments (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                confession_id UUID REFERENCES confessions(id) ON DELETE CASCADE,
+                confession_id TEXT REFERENCES confessions(id) ON DELETE CASCADE,
                 device_id TEXT REFERENCES users(device_id),
                 content TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT NOW()
