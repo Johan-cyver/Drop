@@ -39,18 +39,27 @@ export default function Home() {
             }
         });
 
-        // Real-time Polling (Every 5 seconds)
+        // Real-time Polling (Every 30 seconds to stay within Vercel Postgres free limits)
         const interval = setInterval(() => {
             if (did) {
                 // Check Ban Status + Fetch Feed
                 checkAuth(did).then(good => {
                     if (good) fetchFeed(did);
-                    else router.push('/join'); // Or banned will handle redirect
+                    else router.push('/join');
                 });
             }
-        }, 5000);
+        }, 30000);
 
-        return () => clearInterval(interval);
+        // Fetch on focus
+        const handleFocus = () => {
+            if (did) fetchFeed(did);
+        };
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+        };
     }, []);
 
     const checkAuth = async (did: string) => {
