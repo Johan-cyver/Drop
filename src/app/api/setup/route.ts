@@ -3,6 +3,13 @@ import { sql } from '@vercel/postgres';
 
 export async function GET(req: NextRequest) {
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({
+                error: "DABATASE_NOT_CONNECTED",
+                details: "You haven't connected Vercel Postgres in the dashboard yet. Go to Storage -> Create Database."
+            }, { status: 400 });
+        }
+
         // 1. Users Table
         await sql`
             CREATE TABLE IF NOT EXISTS users (
@@ -15,7 +22,7 @@ export async function GET(req: NextRequest) {
                 coins INTEGER DEFAULT 100,
                 shadow_banned INTEGER DEFAULT 0,
                 last_post_at TEXT,
-                created_at TEXT DEFAULT (NOW())
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `;
 
@@ -23,7 +30,7 @@ export async function GET(req: NextRequest) {
         await sql`
             CREATE TABLE IF NOT EXISTS confessions (
                 id TEXT PRIMARY KEY,
-                public_id TEXT,
+                public_id TEXT, 
                 content TEXT,
                 college_id TEXT,
                 device_id TEXT,
@@ -33,8 +40,7 @@ export async function GET(req: NextRequest) {
                 tag TEXT,
                 expires_at TEXT,
                 drop_active_at TEXT,
-                created_at TEXT DEFAULT (NOW()),
-                FOREIGN KEY(device_id) REFERENCES users(device_id)
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `;
 
@@ -45,7 +51,7 @@ export async function GET(req: NextRequest) {
                 device_id TEXT,
                 confession_id TEXT,
                 value INTEGER,
-                created_at TEXT DEFAULT (NOW()),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(device_id, confession_id)
             );
         `;
@@ -56,12 +62,17 @@ export async function GET(req: NextRequest) {
                 id TEXT PRIMARY KEY,
                 device_id TEXT,
                 message TEXT,
-                created_at TEXT DEFAULT (NOW())
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `;
 
         return NextResponse.json({ success: true, message: 'Database Setup Complete' });
-    } catch (error) {
-        return NextResponse.json({ error }, { status: 500 });
+    } catch (error: any) {
+        console.error('Setup Error:', error);
+        return NextResponse.json({
+            error: 'SETUP_FAILED',
+            message: error.message,
+            stack: error.stack
+        }, { status: 500 });
     }
 }
