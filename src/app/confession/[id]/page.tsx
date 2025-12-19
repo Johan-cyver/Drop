@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
+import { motion } from 'framer-motion';
 import AmbientBackground from '@/components/AmbientBackground';
 import Navbar from '@/components/Navbar';
 import Widgets from '@/components/Widgets';
@@ -96,6 +97,31 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
                     ) : null}
                 </div>
             </main>
+
+            {/* Deep Link / Join CTA for Guests */}
+            {post && !loading && (
+                <div className="fixed bottom-24 lg:bottom-10 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4">
+                    <motion.div
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="bg-brand-glow text-white p-4 rounded-3xl shadow-[0_20px_50px_rgba(139,92,246,0.5)] flex items-center justify-between border border-white/20 backdrop-blur-md"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl">💧</div>
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-widest opacity-80">Join The Drop</p>
+                                <p className="text-sm font-bold">See what's trending now</p>
+                            </div>
+                        </div>
+                        <Link
+                            href="/join"
+                            className="bg-white text-black px-6 py-2.5 rounded-2xl font-black text-sm hover:bg-gray-100 transition active:scale-95"
+                        >
+                            Open App
+                        </Link>
+                    </motion.div>
+                </div>
+            )}
 
             <Widgets />
             <MobileDock onCompose={() => setIsComposeOpen(true)} />

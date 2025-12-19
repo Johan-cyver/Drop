@@ -1,34 +1,58 @@
 import { Home, Search, Plus, Bell, User } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface MobileDockProps {
     onCompose: () => void;
 }
 
 export default function MobileDock({ onCompose }: MobileDockProps) {
+    const pathname = usePathname();
+
+    const navItems = [
+        { icon: Home, label: 'Feed', href: '/', active: pathname === '/' },
+        { icon: Search, label: 'Discover', href: '/discover', active: pathname === '/discover' },
+        { icon: Bell, label: 'Activity', href: '/notifications', active: pathname === '/notifications' },
+        { icon: User, label: 'My Logic', href: '/my-logic', active: pathname === '/my-logic' },
+    ];
+
     return (
         <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-[400px] px-4">
-            <div className="glass-panel rounded-full p-2 flex justify-between items-center shadow-2xl shadow-black/50">
-                <button className="w-12 h-12 flex items-center justify-center rounded-full text-brand-glow bg-white/5">
-                    <Home className="w-6 h-6" />
-                </button>
-                <button className="w-12 h-12 flex items-center justify-center rounded-full text-gray-500 hover:text-white transition">
-                    <Search className="w-6 h-6" />
-                </button>
+            <div className="glass-panel rounded-full p-2 flex justify-between items-center shadow-2xl shadow-black/50 border border-white/10 backdrop-blur-2xl">
+                {navItems.slice(0, 2).map((item) => (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                            "w-12 h-12 flex items-center justify-center rounded-full transition-all active:scale-90",
+                            item.active ? "text-brand-glow bg-white/10 shadow-inner" : "text-gray-500 hover:text-white"
+                        )}
+                    >
+                        <item.icon className="w-6 h-6" />
+                    </Link>
+                ))}
 
                 <button
                     onClick={onCompose}
-                    className="bg-white text-black h-12 px-6 rounded-full font-bold flex items-center gap-2 hover:bg-gray-200 transition transform hover:-translate-y-0.5 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                    className="bg-brand-glow text-white h-12 px-6 rounded-full font-bold flex items-center gap-2 hover:bg-brand-accent transition transform active:scale-95 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
                 >
                     <Plus className="w-5 h-5" />
-                    <span>Drop</span>
+                    <span className="text-sm">Drop</span>
                 </button>
 
-                <button className="w-12 h-12 flex items-center justify-center rounded-full text-gray-500 hover:text-white transition">
-                    <Bell className="w-6 h-6" />
-                </button>
-                <button className="w-12 h-12 flex items-center justify-center rounded-full text-gray-500 hover:text-white transition">
-                    <User className="w-6 h-6" />
-                </button>
+                {navItems.slice(2).map((item) => (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                            "w-12 h-12 flex items-center justify-center rounded-full transition-all active:scale-90",
+                            item.active ? "text-brand-glow bg-white/10 shadow-inner" : "text-gray-500 hover:text-white"
+                        )}
+                    >
+                        <item.icon className="w-6 h-6" />
+                    </Link>
+                ))}
             </div>
         </div>
     );
