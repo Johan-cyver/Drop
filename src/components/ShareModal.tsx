@@ -43,12 +43,17 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
 
             const canvas = await html2canvas(cardRef.current, {
                 useCORS: true,
-                scale: 4, // Ultra high res for desktop/big screens
-                backgroundColor: null,
+                scale: 4,
+                backgroundColor: 'rgba(0,0,0,0)', // Explicit transparency
                 logging: false,
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.querySelector('[data-share-card]');
-                    if (el) (el as HTMLElement).style.borderRadius = '2.5rem';
+                    if (el) {
+                        const style = (el as HTMLElement).style;
+                        style.borderRadius = '2.5rem';
+                        style.overflow = 'hidden';
+                        style.background = 'transparent'; // Ensure the container itself doesn't have a default white bg
+                    }
                 }
             });
 

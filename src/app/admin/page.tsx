@@ -108,10 +108,10 @@ export default function AdminPage() {
 
     return (
         <div className="min-h-screen bg-black text-white p-8 font-mono">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-brand-glow leading-none mb-2">Admin Console</h1>
-                    <p className="text-xs text-gray-500">Authorized Session Active</p>
+                    <h1 className="text-3xl font-bold text-brand-glow leading-none mb-2 text-glow">Admin Console</h1>
+                    <p className="text-xs text-gray-500">Authorized Session • v1.2.0</p>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -137,6 +137,26 @@ export default function AdminPage() {
                     >
                         Logout
                     </button>
+                </div>
+            </div>
+
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-1">Total Users</span>
+                    <span className="text-2xl font-bold text-white tracking-tighter">{users.length}</span>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-1">Active Drops</span>
+                    <span className="text-2xl font-bold text-green-400 tracking-tighter">{posts.filter(p => p.status === 'LIVE').length}</span>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-1">Feedback</span>
+                    <span className="text-2xl font-bold text-purple-400 tracking-tighter">{feedback.length}</span>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-1">Banned</span>
+                    <span className="text-2xl font-bold text-red-500 tracking-tighter">{users.filter(u => u.shadow_banned).length}</span>
                 </div>
             </div>
 
