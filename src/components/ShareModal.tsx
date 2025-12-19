@@ -61,9 +61,7 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
 
             if (canShareFiles) {
                 await navigator.share({
-                    files: [file],
-                    title: 'The Drop',
-                    text: 'Checkout this drop!'
+                    files: [file]
                 });
             } else {
                 // Fallback for desktop: Download
