@@ -14,7 +14,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                 c.*, 
                 COALESCE(v.value, 0) as myVote,
                 u.handle,
-                u.avatar
+                u.avatar,
+                c.image
             FROM confessions c
             LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
             LEFT JOIN users u ON u.device_id = c.device_id

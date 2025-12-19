@@ -28,6 +28,8 @@ export default function JoinPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [deviceId, setDeviceId] = useState('');
+    const [showCollegeModal, setShowCollegeModal] = useState(false);
+    const [newCollegeName, setNewCollegeName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -298,9 +300,6 @@ export default function JoinPage() {
 
                                 {/* College Selection */}
                                 <div className="space-y-1">
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 ml-1 flex items-center gap-2">
-                                        <GraduationCap className="w-3 h-3" /> Your College
-                                    </label>
                                     <select
                                         value={collegeId}
                                         onChange={(e) => setCollegeId(e.target.value)}
@@ -312,7 +311,13 @@ export default function JoinPage() {
                                             </option>
                                         ))}
                                     </select>
-                                    <p className="text-[10px] text-gray-500 px-1">This cannot be changed later.</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCollegeModal(true)}
+                                        className="text-[10px] text-brand-glow font-bold uppercase tracking-widest mt-2 hover:underline"
+                                    >
+                                        + Can't find your college?
+                                    </button>
                                 </div>
 
                                 {/* PIN Input */}
@@ -390,6 +395,6 @@ export default function JoinPage() {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

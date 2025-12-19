@@ -7,7 +7,7 @@ import Widgets from '@/components/Widgets';
 import MobileDock from '@/components/MobileDock';
 import ConfessionCard, { Post } from '@/components/ConfessionCard';
 import ComposeModal from '@/components/ComposeModal';
-import { User, Award, Calendar } from 'lucide-react';
+import { User, Award, Calendar, GraduationCap } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 
 export default function MyLogicPage() {
@@ -83,15 +83,48 @@ export default function MyLogicPage() {
                 {/* Header Profile */}
                 <div className="p-8 border-b border-white/5 bg-gradient-to-b from-brand-start/10 to-transparent">
                     <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand-start to-brand-end flex items-center justify-center shadow-lg shadow-brand-glow/20 overflow-hidden">
-                            {user?.avatar?.startsWith('data:') ? (
-                                <img src={user.avatar} alt="Me" className="w-full h-full object-cover" />
-                            ) : (
-                                <span className="text-3xl font-bold text-white">{user?.avatar || 'Me'}</span>
-                            )}
+                        <div className="relative group">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand-start to-brand-end flex items-center justify-center shadow-lg shadow-brand-glow/20 overflow-hidden">
+                                {user?.avatar?.startsWith('data:') ? (
+                                    <img src={user.avatar} alt="Me" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-3xl font-bold text-white">{user?.avatar || 'Me'}</span>
+                                ) || '👻'}
+                            </div>
+                            <button
+                                onClick={() => {
+                                    const newEmoji = prompt("Pick an emoji or paste a base64 avatar:", user?.avatar || '👻');
+                                    if (newEmoji) {
+                                        fetch('/api/user/update-profile', {
+                                            method: 'POST',
+                                            body: JSON.stringify({ device_id: deviceId, avatar: newEmoji })
+                                        }).then(() => fetchProfile(deviceId));
+                                    }
+                                }}
+                                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-dark-900 border border-white/10 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-2xl"
+                            >
+                                ✏️
+                            </button>
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-white mb-2">{user?.name || 'My Logic'}</h2>
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <h2 className="text-2xl font-bold text-white">{user?.name || 'My Logic'}</h2>
+                                <button
+                                    onClick={() => {
+                                        const newName = prompt("New display name:", user?.name);
+                                        if (newName) {
+                                            fetch('/api/user/update-profile', {
+                                                method: 'POST',
+                                                body: JSON.stringify({ device_id: deviceId, name: newName })
+                                            }).then(() => fetchProfile(deviceId));
+                                        }
+                                    }}
+                                    className="text-[10px] text-gray-500 hover:text-white transition"
+                                >
+                                    Edit
+                                </button>
+                            </div>
+                            <p className="text-brand-glow font-mono text-xs mb-3">@{user?.handle || 'drop_member'}</p>
                             <div className="flex flex-col gap-4 text-xs font-mono text-gray-400">
                                 <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-center p-4 bg-white/5 rounded-2xl border border-white/5 flex-1">
@@ -105,9 +138,15 @@ export default function MyLogicPage() {
                                         <span className="text-[10px] text-gray-400">Available</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                    <Calendar className="w-4 h-4 text-blue-400" />
-                                    <span>Joined {stats ? new Date(stats.joinedAt).toLocaleDateString() : '...'}</span>
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-1.5">
+                                        <GraduationCap className="w-4 h-4 text-brand-glow" />
+                                        <span>{user?.college_name || 'Member College'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <Calendar className="w-4 h-4 text-blue-400" />
+                                        <span>Joined {stats ? new Date(stats.joinedAt).toLocaleDateString() : '...'}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

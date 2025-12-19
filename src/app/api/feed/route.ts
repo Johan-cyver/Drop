@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
                 COALESCE(v.value, 0) as myVote,
                 u.handle,
                 u.avatar,
+                c.image,
                 (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count
             FROM confessions c
             LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}

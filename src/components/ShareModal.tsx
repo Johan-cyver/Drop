@@ -148,7 +148,7 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
                                     <div className="p-1.5 bg-white rounded-lg shadow-xl">
                                         <QRCodeSVG
                                             value={shareUrl}
-                                            size={48}
+                                            size={120}
                                             level="L"
                                             includeMargin={false}
                                         />

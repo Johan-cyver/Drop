@@ -22,6 +22,8 @@ export interface Post {
     drop_active_at?: string;
     isDropActive?: boolean;
     comment_count?: number;
+    image?: string; // Data URI for camera photo
+    color?: string; // Custom card color for sharing
 }
 
 interface ConfessionCardProps {
@@ -112,17 +114,24 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
                     )}
                 </div>
 
-                {/* Main Content */}
-                <Link href={`/confession/${post.id}`} className="relative z-10 block mb-8">
-                    <p className="text-2xl md:text-3xl font-bold text-white leading-tight mb-4 tracking-tight">
+                {/* Content */}
+                <Link href={`/confession/${post.id}`} className="relative z-10 block mb-6">
+                    <p className="text-xl md:text-2xl font-bold text-white leading-tight mb-4 tracking-tight">
                         {post.content}
                     </p>
                     {post.tag && (
-                        <span className="text-brand-glow text-sm font-black uppercase tracking-widest opacity-80 hover:opacity-100 transition">
+                        <span className="text-brand-glow text-[10px] font-black uppercase tracking-[0.2em] opacity-80">
                             #{post.tag.replace('#', '')}
                         </span>
                     )}
                 </Link>
+
+                {post.image && (
+                    <div className="relative w-full aspect-video rounded-3xl overflow-hidden mb-6 border border-white/5 shadow-2xl">
+                        <img src={post.image} alt="Confession" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    </div>
+                )}
 
                 {/* Premium Timer / Status Bar */}
                 {isDropActive && expiryCountdown && (

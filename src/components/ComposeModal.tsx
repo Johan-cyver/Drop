@@ -2,25 +2,29 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Hash, Image, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import CameraCapture from './CameraCapture';
 
 interface ComposeModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (content: string, tag: string) => void;
+    onSubmit: (content: string, tag: string, image?: string) => void;
     deviceId: string;
 }
 
 export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: ComposeModalProps) {
     const [content, setContent] = useState('');
+    const [image, setImage] = useState<string | null>(null);
+    const [showCamera, setShowCamera] = useState(false);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const charCount = content.length;
     const isValid = charCount > 0 && charCount <= 280;
 
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !showCamera) {
             setTimeout(() => inputRef.current?.focus(), 100);
         }
-    }, [isOpen]);
+    }, [isOpen, showCamera]);
 
     const handleSubmit = () => {
         if (!isValid) return;
@@ -29,8 +33,9 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
             alert('Prohibited content.');
             return;
         }
-        onSubmit(content, '#General');
+        onSubmit(content, '#General', image || undefined);
         setContent('');
+        setImage(null);
         onClose();
     };
 
@@ -55,6 +60,18 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                         </button>
                     </div>
 
+                    {image && (
+                        <div className="relative w-full aspect-video rounded-3xl overflow-hidden mb-6 group">
+                            <img src={image} alt="Captured" className="w-full h-full object-cover" />
+                            <button
+                                onClick={() => setImage(null)}
+                                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    )}
+
                     <textarea
                         ref={inputRef}
                         value={content}
@@ -69,7 +86,10 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                             <button className="p-2 rounded-full bg-white/5 text-gray-400 hover:text-brand-glow transition">
                                 <Hash className="w-5 h-5" />
                             </button>
-                            <button className="p-2 rounded-full bg-white/5 text-gray-400 hover:text-brand-glow transition">
+                            <button
+                                onClick={() => setShowCamera(true)}
+                                className={cn("p-2 rounded-full bg-white/5 transition", image ? "text-brand-glow" : "text-gray-400 hover:text-brand-glow")}
+                            >
                                 <Image className="w-5 h-5" />
                             </button>
                         </div>
@@ -85,6 +105,16 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                             <span>No username. No profile. No one can trace this to you.</span>
                         </div>
                     </div>
+
+                    {showCamera && (
+                        <CameraCapture
+                            onCapture={(base64) => {
+                                setImage(base64);
+                                setShowCamera(false);
+                            }}
+                            onCancel={() => setShowCamera(false)}
+                        />
+                    )}
                 </motion.div>
             )}
         </AnimatePresence>
