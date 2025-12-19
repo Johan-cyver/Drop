@@ -246,7 +246,7 @@ export default function AdminPage() {
                 <div className="border border-white/10 rounded-2xl p-6 bg-white/5 backdrop-blur-sm xl:col-span-2">
                     <div className="flex items-center gap-2 mb-6">
                         <FileText className="w-5 h-5 text-orange-400" />
-                        <h2 className="text-xl font-bold">Recent Stream</h2>
+                        <h2 className="text-xl font-bold">Recent Confessions</h2>
                     </div>
                     <div className="overflow-x-auto max-h-[600px]">
                         <table className="w-full text-left text-xs">
