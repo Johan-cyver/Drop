@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql } from '@vercel/postgres';
 import { randomUUID } from 'crypto';
 import { calculateTemporalTimestamps } from '@/lib/utils';
 

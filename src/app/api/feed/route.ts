@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql } from '@vercel/postgres';
 import { rankFeed } from '@/lib/algorithm';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,11 @@ export async function GET(req: NextRequest) {
         const user = userRes.rows[0];
 
         if (!user || !user.college_id) {
-            return NextResponse.json({ feed: [], meta: { hotCount: 0, newCount: 0 } });
+            return NextResponse.json({
+                feed: [],
+                meta: { hotCount: 0, newCount: 0 },
+                msg: "User not found or no college joined"
+            });
         }
 
         // 1. Fetch RAW "LIVE" confessions with My Vote
