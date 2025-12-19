@@ -49,11 +49,19 @@ export async function GET(req: NextRequest) {
                 downvotes INTEGER DEFAULT 0,
                 status TEXT DEFAULT 'LIVE',
                 tag TEXT,
+                image TEXT,
                 expires_at TIMESTAMP,
                 drop_active_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `;
+
+        // Migration: Add image column if it doesn't exist in older DBs
+        try {
+            await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS image TEXT`;
+        } catch (e) {
+            console.log("Migration (confessions.image) error:", e);
+        }
 
         // 3. Votes Table
         await sql`
