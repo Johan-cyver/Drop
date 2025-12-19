@@ -12,6 +12,7 @@ import ComposeModal from '@/components/ComposeModal';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import CommentSection from '@/components/CommentSection';
+import { showToast } from '@/components/NotificationToast';
 
 export default function SingleConfessionPage({ params }: { params: { id: string } }) {
     const [post, setPost] = useState<Post | null>(null);
@@ -137,7 +138,24 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
             <ComposeModal
                 isOpen={isComposeOpen}
                 onClose={() => setIsComposeOpen(false)}
-                onSubmit={() => { }} // No feed refresh needed here really
+                onSubmit={async (content, tag, image) => {
+                    const res = await fetch('/api/confess', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content, device_id: deviceId, image })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        setIsComposeOpen(false);
+                        showToast('Dropped!', 'success');
+                        // Redirect to home to see the new post in feed
+                        window.location.href = '/';
+                        return { success: true, safety_warning: data.safety_warning };
+                    } else {
+                        showToast(data.error, 'error');
+                        return { success: false, safety_warning: data.safety_warning };
+                    }
+                }}
                 deviceId={deviceId}
             />
         </div>

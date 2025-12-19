@@ -1,39 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
-import { randomUUID } from 'crypto';
+import { sql } from '@vercel/postgres';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { name, location, device_id } = body;
+        const { name, city, device_id } = body;
 
         if (!name || !device_id) {
-            return NextResponse.json({ error: 'College name is required' }, { status: 400 });
+            return NextResponse.json({ error: 'College name and Device ID are required' }, { status: 400 });
         }
 
-        // Check if user exists
-        const userRes = await sql`SELECT device_id FROM users WHERE device_id = ${device_id}`;
-        if (userRes.rowCount === 0) {
-            return NextResponse.json({ error: 'User not found' }, { status: 403 });
-        }
+        // 1. Generate unique college ID
+        const collegeId = `clg-${uuidv4().substring(0, 8)}`;
 
-        const id = `clg-${randomUUID().slice(0, 8)}`;
-
-        // Insert as 'PENDING' for admin review
+        // 2. Insert into colleges table as PENDING
         await sql`
-            INSERT INTO users (device_id, college_id) 
-            VALUES (${device_id}, ${id}) 
-            ON CONFLICT (device_id) DO UPDATE SET college_id = ${id}
+            INSERT INTO colleges (id, name, city, status, created_by)
+            VALUES (${collegeId}, ${name}, ${city || 'Unknown'}, 'PENDING', ${device_id})
         `;
 
-        // Note: In a real app, we'd have a 'colleges' table. 
-        // For this MVP, we just assign the college_id to the user.
-        // The admin can later unify these.
+        // 3. Update the user who suggested it to automatically "Join" this college
+        // This ensures they are immediately available for the user who created them.
+        await sql`
+            UPDATE users 
+            SET college_id = ${collegeId}
+            WHERE device_id = ${device_id}
+        `;
 
-        return NextResponse.json({ success: true, college_id: id });
+        return NextResponse.json({
+            success: true,
+            college_id: collegeId,
+            message: 'College suggested successfully! You have been joined to it.'
+        });
 
     } catch (error: any) {
         console.error('Create College Error:', error);
-        return NextResponse.json({ error: 'Failed to suggest college' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to suggest college: ' + error.message }, { status: 500 });
     }
 }

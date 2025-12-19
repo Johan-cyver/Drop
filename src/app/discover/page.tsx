@@ -9,6 +9,7 @@ import ConfessionCard, { Post } from '@/components/ConfessionCard';
 import ComposeModal from '@/components/ComposeModal';
 import { Search, Hash, TrendingUp } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import { showToast } from '@/components/NotificationToast';
 
 function DiscoverContent() {
     const searchParams = useSearchParams();
@@ -143,7 +144,23 @@ function DiscoverContent() {
             <ComposeModal
                 isOpen={isComposeOpen}
                 onClose={() => setIsComposeOpen(false)}
-                onSubmit={() => { }}
+                onSubmit={async (content, tag, image) => {
+                    const res = await fetch('/api/confess', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content, device_id: deviceId, image })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        setIsComposeOpen(false);
+                        showToast('Confession dropped!', 'success');
+                        window.location.href = '/';
+                        return { success: true, safety_warning: data.safety_warning };
+                    } else {
+                        showToast(data.error, 'error');
+                        return { success: false, safety_warning: data.safety_warning };
+                    }
+                }}
                 deviceId={deviceId}
             />
         </div >

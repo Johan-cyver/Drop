@@ -28,9 +28,21 @@ export async function GET(req: NextRequest) {
             CREATE TABLE IF NOT EXISTS colleges (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
-                city TEXT
+                city TEXT,
+                status TEXT DEFAULT 'VERIFIED',
+                created_by TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
             );
         `;
+
+        // Colleges Migrations
+        try {
+            await sql`ALTER TABLE colleges ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'VERIFIED'`;
+            await sql`ALTER TABLE colleges ADD COLUMN IF NOT EXISTS created_by TEXT`;
+            await sql`ALTER TABLE colleges ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()`;
+        } catch (e) {
+            console.log("Colleges migration error:", e);
+        }
 
         // Seed Colleges if empty
         const collegesRes = await sql`SELECT COUNT(*) FROM colleges`;

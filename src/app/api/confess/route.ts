@@ -49,9 +49,18 @@ export async function POST(req: NextRequest) {
         // 4. Prepare Insert (Status & Tags)
         const id = randomUUID();
         let status = 'LIVE';
-        const blacklist = ['kill', 'bomb', 'suicide'];
-        if (blacklist.some(w => content.toLowerCase().includes(w))) {
+        const blacklist = ['kill', 'bomb', 'terrorist'];
+        const crisisWords = ['suicide', 'self-harm', 'end my life', 'depressed', 'help me', 'worthless', 'giving up'];
+
+        const contentLower = content.toLowerCase();
+        let safetyWarning = false;
+
+        if (blacklist.some(w => contentLower.includes(w))) {
             status = 'FLAGGED';
+        }
+
+        if (crisisWords.some(w => contentLower.includes(w))) {
+            safetyWarning = true;
         }
 
         const tagMatch = content.match(/#[\w]+/);
@@ -82,10 +91,13 @@ export async function POST(req: NextRequest) {
         `;
 
         if (status === 'FLAGGED') {
-            return NextResponse.json({ error: 'Your confession has been flagged for review.' }, { status: 403 });
+            return NextResponse.json({
+                error: 'Your confession has been flagged for review.',
+                safety_warning: safetyWarning
+            }, { status: 403 });
         }
 
-        return NextResponse.json({ success: true, id }, { status: 201 });
+        return NextResponse.json({ success: true, id, safety_warning: safetyWarning }, { status: 201 });
 
     } catch (error: any) {
         console.error('Confess API Error:', error);

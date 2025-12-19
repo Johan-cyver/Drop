@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import AmbientBackground from '@/components/AmbientBackground';
 import Navbar from '@/components/Navbar';
 import Widgets from '@/components/Widgets';
 import MobileDock from '@/components/MobileDock';
 import ConfessionCard, { Post } from '@/components/ConfessionCard';
 import ComposeModal from '@/components/ComposeModal';
-import { User, Award, Calendar, GraduationCap } from 'lucide-react';
-import { formatTime } from '@/lib/utils';
+import { User, Award, Calendar, GraduationCap, Edit3, Camera, Sparkles, X, Upload } from 'lucide-react';
+import { formatTime, cn } from '@/lib/utils';
+import { showToast } from '@/components/NotificationToast';
 
 export default function MyLogicPage() {
     const [activeTab, setActiveTab] = useState<'created' | 'saved'>('created');
@@ -20,7 +22,11 @@ export default function MyLogicPage() {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isComposeOpen, setIsComposeOpen] = useState(false);
+    const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
     const [deviceId, setDeviceId] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    const AVATARS = ['👻', '👽', '💀', '🤖', '👾', '🦊', '🌚', '🧛', '🧙', '🥷'];
 
     useEffect(() => {
         const did = localStorage.getItem('device_id');
@@ -92,18 +98,10 @@ export default function MyLogicPage() {
                                 )}
                             </div>
                             <button
-                                onClick={() => {
-                                    const newEmoji = prompt("Pick an emoji or paste a base64 avatar:", user?.avatar || '👻');
-                                    if (newEmoji) {
-                                        fetch('/api/user/update-profile', {
-                                            method: 'POST',
-                                            body: JSON.stringify({ device_id: deviceId, avatar: newEmoji })
-                                        }).then(() => fetchProfile(deviceId));
-                                    }
-                                }}
-                                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-dark-900 border border-white/10 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-2xl"
+                                onClick={() => setIsAvatarModalOpen(true)}
+                                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-dark-900 border border-white/10 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-2xl hover:bg-brand-glow/20"
                             >
-                                ✏️
+                                <Edit3 className="w-4 h-4 text-white" />
                             </button>
                         </div>
                         <div>
@@ -124,17 +122,24 @@ export default function MyLogicPage() {
                                     Edit
                                 </button>
                             </div>
-                            <p className="text-brand-glow font-mono text-xs mb-3">@{user?.handle || 'drop_member'}</p>
+                            <p className="text-brand-glow font-mono text-xs mb-3 flex items-center gap-2">
+                                @{user?.handle || 'drop_member'}
+                                <span className="px-2 py-0.5 rounded bg-white/5 text-[10px] text-gray-500 font-black tracking-widest border border-white/5">
+                                    ID: {deviceId.slice(0, 8).toUpperCase()}
+                                </span>
+                            </p>
                             <div className="flex flex-col gap-4 text-xs font-mono text-gray-400">
                                 <div className="flex items-center gap-4">
-                                    <div className="flex flex-col items-center p-4 bg-white/5 rounded-2xl border border-white/5 flex-1">
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Impact</span>
+                                    <div className="flex flex-col items-center p-4 bg-white/5 rounded-2xl border border-white/5 flex-1 hover:bg-white/10 transition-all cursor-default">
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1 flex items-center gap-1">
+                                            <Sparkles className="w-3 h-3 text-brand-glow" /> Impact
+                                        </span>
                                         <span className="text-2xl font-bold font-mono text-white">{stats?.karma || 0}</span>
                                         <span className="text-[10px] text-gray-400">Reactions Triggered</span>
                                     </div>
-                                    <div className="flex flex-col items-center p-4 bg-white/5 rounded-2xl border border-white/5 flex-1 tooltip" title="Used to unlock special features (Coming Soon)">
+                                    <div className="flex flex-col items-center p-4 bg-white/5 rounded-2xl border border-white/5 flex-1 hover:bg-white/10 transition-all cursor-default">
                                         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Drop Coins</span>
-                                        <span className="text-2xl font-bold font-mono text-white">{stats?.karma ? stats.karma * 10 : 100}</span>
+                                        <span className="text-2xl font-bold font-mono text-white">{stats?.coins || 100}</span>
                                         <span className="text-[10px] text-gray-400">Available</span>
                                     </div>
                                 </div>
@@ -215,9 +220,85 @@ export default function MyLogicPage() {
             <ComposeModal
                 isOpen={isComposeOpen}
                 onClose={() => setIsComposeOpen(false)}
-                onSubmit={() => fetchProfile(deviceId)}
+                onSubmit={async (content, tag, image) => {
+                    const res = await fetch('/api/confess', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content, device_id: deviceId, image })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        fetchProfile(deviceId);
+                        setIsComposeOpen(false);
+                        showToast('Confession dropped!', 'success');
+                        return { success: true, safety_warning: data.safety_warning };
+                    } else {
+                        showToast(data.error, 'error');
+                        return { success: false, safety_warning: data.safety_warning };
+                    }
+                }}
                 deviceId={deviceId}
             />
+
+            {/* Avatar Selection Modal */}
+            <AnimatePresence>
+                {isAvatarModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            className="w-full max-w-sm bg-dark-900 border border-white/10 rounded-[2.5rem] p-8 shadow-2xl relative"
+                        >
+                            <button
+                                onClick={() => setIsAvatarModalOpen(false)}
+                                className="absolute top-6 right-6 text-gray-500 hover:text-white"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+
+                            <div className="text-center mb-8">
+                                <h3 className="text-xl font-bold text-white mb-2">Change Avatar</h3>
+                                <p className="text-xs text-gray-500">How do you want to be seen today?</p>
+                            </div>
+
+                            <div className="grid grid-cols-5 gap-3 mb-8">
+                                {AVATARS.map((emoji) => (
+                                    <button
+                                        key={emoji}
+                                        onClick={async () => {
+                                            setIsUpdating(true);
+                                            await fetch('/api/user/update-profile', {
+                                                method: 'POST',
+                                                body: JSON.stringify({ device_id: deviceId, avatar: emoji })
+                                            });
+                                            fetchProfile(deviceId);
+                                            setIsAvatarModalOpen(false);
+                                            setIsUpdating(false);
+                                            showToast('Avatar updated!', 'success');
+                                        }}
+                                        className={cn(
+                                            "w-12 h-12 rounded-xl text-2xl flex items-center justify-center transition-all",
+                                            user?.avatar === emoji ? "bg-brand-glow text-white shadow-lg scale-110" : "bg-white/5 hover:bg-white/10 text-gray-400"
+                                        )}
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <p className="text-[9px] text-center text-gray-600 uppercase tracking-[0.2em] font-black">
+                                Select an emoji to update instantly
+                            </p>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

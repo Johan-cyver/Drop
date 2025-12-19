@@ -1,14 +1,15 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { X, Hash, Image, ShieldCheck } from 'lucide-react';
+import { X, Hash, Camera, ShieldCheck, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import CameraCapture from './CameraCapture';
+import HelplineModal from './HelplineModal';
 
 interface ComposeModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (content: string, tag: string, image?: string) => void;
+    onSubmit: (content: string, tag: string, image?: string) => Promise<{ success: boolean; safety_warning?: boolean; error?: string } | void>;
     deviceId: string;
 }
 
@@ -16,6 +17,9 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
     const [content, setContent] = useState('');
     const [image, setImage] = useState<string | null>(null);
     const [showCamera, setShowCamera] = useState(false);
+    const [showHelpline, setShowHelpline] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const charCount = content.length;
     const isValid = charCount > 0 && charCount <= 280;
@@ -26,17 +30,28 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
         }
     }, [isOpen, showCamera]);
 
-    const handleSubmit = () => {
-        if (!isValid) return;
-        // Mock simple safety
-        if (['kill', 'bomb'].some(w => content.toLowerCase().includes(w))) {
-            alert('Prohibited content.');
-            return;
+    const handleSubmit = async () => {
+        if (!isValid || isSubmitting) return;
+
+        setIsSubmitting(true);
+        try {
+            const result = await onSubmit(content, '#General', image || undefined);
+
+            if (result && result.safety_warning) {
+                setShowHelpline(true);
+            }
+
+            if (result && result.success) {
+                setContent('');
+                setImage(null);
+                // We don't close immediately if safety warning is shown? 
+                // Actually, onSubmit in page.tsx already closes on success.
+                // If safety_warning is true, we should probably keep ComposeModal open but hidden under Helpline?
+                // Or just close ComposeModal and show Helpline over the Feed.
+            }
+        } finally {
+            setIsSubmitting(false);
         }
-        onSubmit(content, '#General', image || undefined);
-        setContent('');
-        setImage(null);
-        onClose();
     };
 
     return (
@@ -90,7 +105,7 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                                 onClick={() => setShowCamera(true)}
                                 className={cn("p-2 rounded-full bg-white/5 transition", image ? "text-brand-glow" : "text-gray-400 hover:text-brand-glow")}
                             >
-                                <Image className="w-5 h-5" />
+                                <Camera className="w-5 h-5" />
                             </button>
                         </div>
                         <span className={`text-sm font-mono ${charCount > 250 ? 'text-red-500' : 'text-gray-600'}`}>
@@ -115,6 +130,14 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                             onCancel={() => setShowCamera(false)}
                         />
                     )}
+
+                    <HelplineModal
+                        isOpen={showHelpline}
+                        onClose={() => {
+                            setShowHelpline(false);
+                            onClose();
+                        }}
+                    />
                 </motion.div>
             )}
         </AnimatePresence>

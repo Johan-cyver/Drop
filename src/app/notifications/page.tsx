@@ -7,6 +7,7 @@ import Widgets from '@/components/Widgets';
 import MobileDock from '@/components/MobileDock';
 import ComposeModal from '@/components/ComposeModal';
 import { Bell, Heart, MessageCircle, Zap } from 'lucide-react';
+import { showToast } from '@/components/NotificationToast';
 
 export default function NotificationsPage() {
     const [isComposeOpen, setIsComposeOpen] = useState(false);
@@ -74,8 +75,25 @@ export default function NotificationsPage() {
             <ComposeModal
                 isOpen={isComposeOpen}
                 onClose={() => setIsComposeOpen(false)}
-                onSubmit={() => { }}
-                deviceId=""
+                onSubmit={async (content, tag, image) => {
+                    const did = localStorage.getItem('device_id') || "";
+                    const res = await fetch('/api/confess', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content, device_id: did, image })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        setIsComposeOpen(false);
+                        showToast('Confession dropped!', 'success');
+                        window.location.href = '/';
+                        return { success: true, safety_warning: data.safety_warning };
+                    } else {
+                        showToast(data.error, 'error');
+                        return { success: false, safety_warning: data.safety_warning };
+                    }
+                }}
+                deviceId={""}
             />
         </div>
     );

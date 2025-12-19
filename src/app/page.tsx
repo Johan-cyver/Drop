@@ -10,6 +10,7 @@ import MobileDock from '@/components/MobileDock';
 import ComposeModal from '@/components/ComposeModal';
 import FeedbackModal from '@/components/FeedbackModal';
 import { Post } from '@/components/ConfessionCard';
+import { showToast } from '@/components/NotificationToast';
 
 export default function Home() {
     const [posts, setPosts] = useState<Post[]>([]);
@@ -118,23 +119,28 @@ export default function Home() {
         }
     };
 
-    const handleSubmit = async (content: string, tag: string) => {
+    const handleSubmit = async (content: string, tag: string, image?: string) => {
         try {
             const res = await fetch('/api/confess', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, device_id: deviceId })
+                body: JSON.stringify({ content, device_id: deviceId, image })
             });
+
+            const data = await res.json();
 
             if (res.ok) {
                 fetchFeed(deviceId);
                 setIsComposeOpen(false);
+                showToast('Confession dropped successfully!', 'success');
+                return { success: true, safety_warning: data.safety_warning };
             } else {
-                const err = await res.json();
-                alert(err.error || 'Failed to post');
+                showToast(data.error || 'Failed to post', 'error');
+                return { success: false, safety_warning: data.safety_warning, error: data.error };
             }
         } catch (e) {
-            alert('Network error');
+            showToast('Network error', 'error');
+            return { success: false };
         }
     };
 
