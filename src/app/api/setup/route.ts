@@ -20,8 +20,8 @@ export async function GET(req: NextRequest) {
                 name TEXT,
                 college_id TEXT,
                 coins INTEGER DEFAULT 100,
-                shadow_banned INTEGER DEFAULT 0,
-                last_post_at TEXT,
+                shadow_banned BOOLEAN DEFAULT FALSE,
+                last_post_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `;
@@ -38,8 +38,8 @@ export async function GET(req: NextRequest) {
                 downvotes INTEGER DEFAULT 0,
                 status TEXT DEFAULT 'LIVE',
                 tag TEXT,
-                expires_at TEXT,
-                drop_active_at TEXT,
+                expires_at TIMESTAMP,
+                drop_active_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `;

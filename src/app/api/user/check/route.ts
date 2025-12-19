@@ -21,11 +21,14 @@ export async function GET(req: NextRequest) {
             exists: true,
             hasHandle: !!user.handle,
             handle: user.handle,
-            blocked: !!user.shadow_banned
+            blocked: user.shadow_banned === true // Explicit boolean check for Postgres
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Check error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({
+            error: 'CHECK_FAILED',
+            message: error.message
+        }, { status: 500 });
     }
 }
