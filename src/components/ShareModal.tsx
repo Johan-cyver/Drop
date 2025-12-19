@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Share2, Copy, Sparkles } from 'lucide-react';
+import { X, Download, Share2, Copy, Sparkles, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Post } from './ConfessionCard';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +21,7 @@ const VIBES = [
 
 export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
     const [selectedVibe, setSelectedVibe] = useState(VIBES[0]);
+    const [capturing, setCapturing] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
 
     if (!post) return null;
@@ -32,15 +33,55 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
         alert('Link copied to clipboard!');
     };
 
-    const handleNativeShare = async () => {
+    const handleShareAsImage = async () => {
+        if (!cardRef.current) return;
+        setCapturing(true);
         try {
-            await navigator.share({
-                title: 'The Drop - Anonymous Confession',
-                text: post.content,
-                url: shareUrl
+            // Dynamic import to keep bundle size small for those who don't share
+            const html2canvas = (await import('html2canvas')).default;
+
+            // Capture the card
+            const canvas = await html2canvas(cardRef.current, {
+                useCORS: true,
+                scale: 3, // Very high res for stories
+                backgroundColor: null,
+                logging: false,
+                onclone: (clonedDoc) => {
+                    // Ensure the cloned element is visible for capture
+                    const el = clonedDoc.querySelector('[data-share-card]');
+                    if (el) (el as HTMLElement).style.borderRadius = '2.5rem';
+                }
             });
+
+            const blob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!), 'image/png', 1.0));
+            const file = new File([blob], `drop-${post.public_id}.png`, { type: 'image/png' });
+
+            // Check for native share support with files (mostly mobile)
+            const canShareFiles = navigator.canShare && navigator.canShare({ files: [file] });
+
+            if (canShareFiles) {
+                await navigator.share({
+                    files: [file],
+                    title: 'The Drop',
+                    text: 'Checkout this drop!'
+                });
+            } else {
+                // Fallback for desktop: Download
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `the-drop-${post.public_id}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                alert('Card saved! Now you can upload it to your Instagram/WhatsApp story.');
+            }
         } catch (err) {
+            console.error('Capture failed', err);
             handleCopyLink();
+        } finally {
+            setCapturing(false);
         }
     };
 
@@ -51,19 +92,20 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl overflow-y-auto"
                     onClick={onClose}
                 >
                     <motion.div
-                        initial={{ scale: 0.9, y: 20 }}
-                        animate={{ scale: 1, y: 0 }}
-                        exit={{ scale: 0.9, y: 20 }}
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.9, opacity: 0 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-full max-w-lg flex flex-col items-center gap-8"
+                        className="w-full max-w-lg flex flex-col items-center gap-6 py-10"
                     >
                         {/* The Shareable Card */}
                         <div
                             ref={cardRef}
+                            data-share-card
                             className={cn(
                                 "w-full aspect-[4/5] rounded-[2.5rem] p-10 flex flex-col relative overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.8)] border border-white/10",
                                 selectedVibe.class
@@ -76,7 +118,7 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
                             </div>
 
                             {/* Logo */}
-                            <div className="flex items-center gap-3 mb-12 relative z-10">
+                            <div className="flex items-center gap-3 mb-10 relative z-10">
                                 <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg">
                                     <Sparkles className="w-5 h-5 text-white" />
                                 </div>
@@ -84,10 +126,10 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
                             </div>
 
                             {/* Content Area */}
-                            <div className="flex-1 flex flex-col justify-center relative z-10">
+                            <div className="flex-1 flex flex-col justify-center relative z-10 px-2">
                                 <p className={cn(
-                                    "text-3xl md:text-4xl font-black leading-[1.1] tracking-tight text-balance",
-                                    selectedVibe.text
+                                    "text-3xl md:text-3xl font-black leading-[1.15] tracking-tight text-white",
+                                    selectedVibe.name === 'Cosmic' || selectedVibe.name === 'Midnight' ? 'text-white' : ''
                                 )}>
                                     "{post.content}"
                                 </p>
@@ -99,65 +141,75 @@ export default function ShareModal({ isOpen, onClose, post }: ShareModalProps) {
                             </div>
 
                             {/* Footer Info */}
-                            <div className="mt-8 flex items-baseline justify-between relative z-10">
+                            <div className="mt-8 flex items-end justify-between relative z-10 border-t border-white/10 pt-6">
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-1">Dropped via</span>
-                                    <span className="text-sm font-mono font-bold text-white/80">{post.public_id}</span>
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50 mb-1">Dropped via</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center text-xs">👻</div>
+                                        <span className="text-sm font-mono font-black text-white">{post.public_id}</span>
+                                    </div>
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-1">Scan to reveal</span>
-                                    <div className="text-xs font-bold text-white tracking-tight">thedrop.app</div>
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50 mb-1">Scan to reveal</span>
+                                    <div className="text-sm font-black text-white tracking-tighter">thedrop.app</div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Controls */}
-                        <div className="w-full flex flex-col gap-6">
+                        <div className="w-full flex flex-col gap-8 bg-white/5 p-6 rounded-[2.5rem] border border-white/5">
                             {/* Vibe Selector */}
-                            <div className="flex justify-center gap-3">
-                                {VIBES.map((vibe) => (
-                                    <button
-                                        key={vibe.name}
-                                        onClick={() => setSelectedVibe(vibe)}
-                                        className={cn(
-                                            "w-10 h-10 rounded-full border-2 transition-all p-0.5",
-                                            selectedVibe.name === vibe.name ? "border-white scale-110" : "border-transparent opacity-60 hover:opacity-100"
-                                        )}
-                                    >
-                                        <div className={cn("w-full h-full rounded-full", vibe.class)} />
-                                    </button>
-                                ))}
+                            <div className="flex flex-col gap-3">
+                                <span className="text-[10px] uppercase font-black tracking-widest text-gray-500 text-center">Choose Vibe</span>
+                                <div className="flex justify-center gap-3">
+                                    {VIBES.map((vibe) => (
+                                        <button
+                                            key={vibe.name}
+                                            onClick={() => setSelectedVibe(vibe)}
+                                            className={cn(
+                                                "w-10 h-10 rounded-full border-2 transition-all p-0.5",
+                                                selectedVibe.name === vibe.name ? "border-white scale-125 shadow-lg shadow-white/20" : "border-transparent opacity-40 hover:opacity-100"
+                                            )}
+                                        >
+                                            <div className={cn("w-full h-full rounded-full", vibe.class)} />
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex gap-4">
+                            <div className="flex flex-col gap-3">
                                 <button
-                                    onClick={handleNativeShare}
-                                    className="flex-1 bg-white text-black py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-100 transition active:scale-95"
+                                    onClick={handleShareAsImage}
+                                    disabled={capturing}
+                                    className="w-full bg-white text-black py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-gray-100 transition active:scale-95 shadow-xl disabled:opacity-50"
                                 >
-                                    <Share2 className="w-5 h-5" />
-                                    Share
+                                    {capturing ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <ImageIcon className="w-5 h-5" />
+                                    )}
+                                    {capturing ? 'Preparing Card...' : 'Share to Story'}
                                 </button>
-                                <button
-                                    onClick={handleCopyLink}
-                                    className="px-6 bg-white/10 text-white py-4 rounded-2xl font-bold border border-white/10 hover:bg-white/20 transition active:scale-95"
-                                >
-                                    <Copy className="w-5 h-5" />
-                                </button>
-                            </div>
 
-                            <p className="text-center text-[11px] text-gray-500 uppercase tracking-widest font-bold">
-                                Spotify-style confession card
-                            </p>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={handleCopyLink}
+                                        className="flex-1 bg-white/10 text-white py-4 rounded-2xl font-bold border border-white/5 hover:bg-white/15 transition active:scale-95 flex items-center justify-center gap-2"
+                                    >
+                                        <Copy className="w-4 h-4 text-gray-400" />
+                                        <span className="text-sm">Link</span>
+                                    </button>
+                                    <button
+                                        onClick={onClose}
+                                        className="px-6 bg-white/5 text-gray-400 py-4 rounded-2xl font-bold border border-white/5 hover:text-white transition active:scale-95"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </motion.div>
-
-                    <button
-                        onClick={onClose}
-                        className="absolute top-8 right-8 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 transition"
-                    >
-                        <X className="w-6 h-6" />
-                    </button>
                 </motion.div>
             )}
         </AnimatePresence>

@@ -84,7 +84,7 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
                 <div className="flex justify-between items-start mb-6 relative z-10">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl shadow-xl overflow-hidden backdrop-blur-md">
-                            {post.avatar || '👻'}
+                            👻
                         </div>
                         <div className="flex flex-col">
                             <span className="text-sm font-black tracking-tight text-white/90">
