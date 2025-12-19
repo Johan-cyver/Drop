@@ -1,0 +1,161 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AmbientBackground from '@/components/AmbientBackground';
+import Navbar from '@/components/Navbar';
+import Widgets from '@/components/Widgets';
+import Feed from '@/components/Feed';
+import MobileDock from '@/components/MobileDock';
+import ComposeModal from '@/components/ComposeModal';
+import FeedbackModal from '@/components/FeedbackModal';
+import { Post } from '@/components/ConfessionCard';
+
+export default function Home() {
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [isComposeOpen, setIsComposeOpen] = useState(false);
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+    const [deviceId, setDeviceId] = useState('');
+    const [hotCount, setHotCount] = useState(0);
+
+    const router = useRouter();
+
+    // Initialize & Fetch
+    useEffect(() => {
+        // Device ID Management
+        let did = localStorage.getItem('device_id');
+        if (!did) {
+            did = crypto.randomUUID();
+            localStorage.setItem('device_id', did);
+        }
+        setDeviceId(did);
+
+        // Auth Check & Initial Fetch
+        checkAuth(did).then(isAuthenticated => {
+            if (isAuthenticated) {
+                fetchFeed(did);
+            } else {
+                router.push('/join');
+            }
+        });
+
+        // Real-time Polling (Every 5 seconds)
+        const interval = setInterval(() => {
+            if (did) {
+                // Check Ban Status + Fetch Feed
+                checkAuth(did).then(good => {
+                    if (good) fetchFeed(did);
+                    else router.push('/join'); // Or banned will handle redirect
+                });
+            }
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const checkAuth = async (did: string) => {
+        try {
+            const res = await fetch(`/api/user/check?device_id=${did}`);
+            const data = await res.json();
+
+            if (data.blocked) {
+                router.push('/banned');
+                return false;
+            }
+
+            return !!data.hasHandle;
+        } catch (e) {
+            return false;
+        }
+    };
+
+    const fetchFeed = async (did?: string) => {
+        try {
+            const res = await fetch(`/api/feed?device_id=${did || deviceId}`);
+            const data = await res.json();
+            if (data.feed) {
+                setPosts(data.feed);
+                setHotCount(data.meta?.hotCount || 0);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleVote = async (id: string, val: number) => {
+        // 1. Optimistic UI Update
+        const updated = posts.map(p => {
+            if (p.id !== id) return p;
+
+            // Toggle Logic
+            const currentVote = p.myVote || 0;
+            let newVote = currentVote === val ? 0 : val;
+            let voteDiff = newVote - currentVote;
+
+            return { ...p, upvotes: p.upvotes + voteDiff, myVote: newVote };
+        });
+        setPosts(updated);
+
+        // 2. API Call (Fire & Forget mostly, but we catch errors)
+        try {
+            await fetch('/api/vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confession_id: id, value: val, device_id: deviceId })
+            });
+        } catch (e) {
+            console.error('Vote failed', e);
+            // Revert on error in a production app
+        }
+    };
+
+    const handleSubmit = async (content: string, tag: string) => {
+        try {
+            const res = await fetch('/api/confess', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, device_id: deviceId })
+            });
+
+            if (res.ok) {
+                fetchFeed(deviceId);
+                setIsComposeOpen(false);
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Failed to post');
+            }
+        } catch (e) {
+            alert('Network error');
+        }
+    };
+
+    return (
+        <div className="h-full w-full max-w-7xl mx-auto flex lg:grid lg:grid-cols-12 gap-8 relative z-10 sm:px-6 lg:px-8">
+            <AmbientBackground />
+
+            <Navbar
+                onCompose={() => setIsComposeOpen(true)}
+                onFeedback={() => setIsFeedbackOpen(true)}
+            />
+
+            <Feed posts={posts} onVote={handleVote} />
+
+            <Widgets />
+
+            <MobileDock onCompose={() => setIsComposeOpen(true)} />
+
+            <ComposeModal
+                isOpen={isComposeOpen}
+                onClose={() => setIsComposeOpen(false)}
+                onSubmit={handleSubmit}
+                deviceId={deviceId}
+            />
+
+            <FeedbackModal
+                isOpen={isFeedbackOpen}
+                onClose={() => setIsFeedbackOpen(false)}
+                deviceId={deviceId}
+            />
+        </div>
+    );
+}

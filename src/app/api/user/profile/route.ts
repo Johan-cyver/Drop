@@ -1,0 +1,45 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { sql } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
+    try {
+        const { searchParams } = new URL(req.url);
+        const deviceId = searchParams.get('device_id');
+
+        if (!deviceId) return NextResponse.json({ error: 'Missing Device ID' }, { status: 400 });
+
+        // 1. Fetch User Stats
+        const userRes = await sql`SELECT * FROM users WHERE device_id = ${deviceId}`;
+        const user = userRes.rows[0];
+
+        // 2. Fetch User's Posts
+        const myPostsRes = await sql`
+            SELECT * FROM confessions 
+            WHERE device_id = ${deviceId} 
+            ORDER BY created_at DESC
+        `;
+        const myPosts = myPostsRes.rows;
+
+        // 3. Simple Stats
+        // Convert string counts to numbers if needed (pg returns strings for bigints)
+        const totalUpvotes = myPosts.reduce((acc, p) => acc + (p.upvotes || 0), 0);
+        const totalDownvotes = myPosts.reduce((acc, p) => acc + (p.downvotes || 0), 0);
+        const karma = totalUpvotes - totalDownvotes + (myPosts.length * 5);
+
+        return NextResponse.json({
+            user: user || { device_id: deviceId, risk_score: 0 },
+            stats: {
+                joinedAt: user?.created_at || new Date().toISOString(),
+                karma: Math.max(0, karma),
+                postsCount: myPosts.length
+            },
+            posts: myPosts
+        });
+
+    } catch (error) {
+        console.error('Profile Error:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}

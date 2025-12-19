@@ -1,0 +1,110 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { notFound } from 'next/navigation';
+import AmbientBackground from '@/components/AmbientBackground';
+import Navbar from '@/components/Navbar';
+import Widgets from '@/components/Widgets';
+import MobileDock from '@/components/MobileDock';
+import ConfessionCard, { Post } from '@/components/ConfessionCard';
+import ComposeModal from '@/components/ComposeModal';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+
+export default function SingleConfessionPage({ params }: { params: { id: string } }) {
+    const [post, setPost] = useState<Post | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [isComposeOpen, setIsComposeOpen] = useState(false);
+    const [deviceId, setDeviceId] = useState('');
+
+    useEffect(() => {
+        const did = localStorage.getItem('device_id');
+        if (did) setDeviceId(did);
+        fetchPost(did || undefined);
+    }, [params.id]);
+
+    const fetchPost = async (did?: string) => {
+        try {
+            const res = await fetch(`/api/confession/${params.id}?device_id=${did || deviceId}`);
+            if (res.status === 404) {
+                setError(true);
+                return;
+            }
+            const data = await res.json();
+            setPost(data);
+        } catch (e) {
+            console.error(e);
+            setError(true);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVote = async (id: string, val: number) => {
+        if (!post) return;
+
+        // Optimistic
+        const currentVote = post.myVote || 0;
+        let newVote = currentVote === val ? 0 : val;
+        let voteDiff = newVote - currentVote;
+
+        setPost({ ...post, upvotes: post.upvotes + voteDiff, myVote: newVote });
+
+        // API
+        try {
+            await fetch('/api/vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confession_id: id, value: val, device_id: deviceId })
+            });
+        } catch (e) {
+            console.error('Vote failed', e);
+        }
+    };
+
+    if (error) return <div className="text-center text-white pt-20">Confession not found.</div>;
+
+    return (
+        <div className="h-full w-full max-w-7xl mx-auto flex lg:grid lg:grid-cols-12 gap-8 relative z-10 sm:px-6 lg:px-8">
+            <AmbientBackground />
+            <Navbar onCompose={() => setIsComposeOpen(true)} />
+
+            {/* Main Content */}
+            <main className="flex-1 lg:col-span-6 w-full max-w-[480px] lg:max-w-none mx-auto flex flex-col h-full bg-dark-950/50 lg:bg-transparent lg:border-x lg:border-white/5 relative shadow-2xl lg:shadow-none min-h-screen">
+                {/* Header */}
+                <div className="p-6 flex items-center gap-4">
+                    <Link href="/" className="p-2 rounded-full hover:bg-white/10 transition text-gray-400 hover:text-white">
+                        <ArrowLeft className="w-6 h-6" />
+                    </Link>
+                    <h2 className="text-xl font-bold uppercase tracking-widest">Confession</h2>
+                </div>
+
+                <div className="px-4 lg:px-6 mt-4">
+                    {loading ? (
+                        <div className="animate-pulse flex space-x-4">
+                            <div className="flex-1 space-y-4 py-1">
+                                <div className="h-4 bg-white/10 rounded w-3/4"></div>
+                                <div className="space-y-2">
+                                    <div className="h-4 bg-white/10 rounded"></div>
+                                    <div className="h-4 bg-white/10 rounded w-5/6"></div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : post ? (
+                        <ConfessionCard post={post} onVote={handleVote} />
+                    ) : null}
+                </div>
+            </main>
+
+            <Widgets />
+            <MobileDock onCompose={() => setIsComposeOpen(true)} />
+            <ComposeModal
+                isOpen={isComposeOpen}
+                onClose={() => setIsComposeOpen(false)}
+                onSubmit={() => { }} // No feed refresh needed here really
+                deviceId={deviceId}
+            />
+        </div>
+    );
+}
