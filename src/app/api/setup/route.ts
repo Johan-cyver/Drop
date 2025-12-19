@@ -3,11 +3,22 @@ import { sql } from '@vercel/postgres';
 
 export async function GET(req: NextRequest) {
     try {
+        const { searchParams } = new URL(req.url);
+        const shouldReset = searchParams.get('reset') === 'true';
+
         if (!process.env.POSTGRES_URL) {
             return NextResponse.json({
-                error: "DABATASE_NOT_CONNECTED",
+                error: "DATABASE_NOT_CONNECTED",
                 details: "You haven't connected Vercel Postgres in the dashboard yet. Go to Storage -> Create Database."
             }, { status: 400 });
+        }
+
+        if (shouldReset) {
+            console.log("Resetting all tables...");
+            await sql`DROP TABLE IF EXISTS votes CASCADE`;
+            await sql`DROP TABLE IF EXISTS feedback CASCADE`;
+            await sql`DROP TABLE IF EXISTS confessions CASCADE`;
+            await sql`DROP TABLE IF EXISTS users CASCADE`;
         }
 
         // 1. Users Table
@@ -66,7 +77,12 @@ export async function GET(req: NextRequest) {
             );
         `;
 
-        return NextResponse.json({ success: true, message: 'Database Setup Complete' });
+        return NextResponse.json({
+            success: true,
+            message: shouldReset ? 'Database Wipe and Reset Complete' : 'Database Setup Complete',
+            reset: shouldReset
+        });
+
     } catch (error: any) {
         console.error('Setup Error:', error);
         return NextResponse.json({

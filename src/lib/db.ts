@@ -44,6 +44,6 @@ export interface User {
     avatar: string | null;
     college_id: string;
     coins: number;
-    shadow_banned: number;
+    shadow_banned: boolean;
     created_at: string;
 }

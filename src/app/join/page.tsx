@@ -276,7 +276,7 @@ export default function JoinPage() {
                                         type="text"
                                         value={displayName}
                                         onChange={(e) => setDisplayName(e.target.value)}
-                                        placeholder="e.g. Johan Joby"
+                                        placeholder="e.g. Alex Doe"
                                         maxLength={30}
                                         className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-600 focus:outline-none focus:border-brand-glow/50 transition-all font-medium"
                                     />
@@ -355,7 +355,7 @@ export default function JoinPage() {
                                         type="text"
                                         value={loginHandle}
                                         onChange={(e) => setLoginHandle(e.target.value)}
-                                        placeholder="@johan_joby_1234"
+                                        placeholder="@username_1234"
                                         className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-600 focus:outline-none focus:border-brand-glow/50 transition-all font-medium"
                                     />
                                 </div>
