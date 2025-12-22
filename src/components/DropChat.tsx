@@ -127,7 +127,12 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
                                         ? "bg-brand-glow text-white rounded-tr-none"
                                         : "bg-white/5 text-gray-200 border border-white/5 rounded-tl-none"
                                 )}>
-                                    {!isMe && <p className="text-[8px] font-black uppercase tracking-widest text-brand-glow mb-1">{msg.handle}</p>}
+                                    <p className={cn(
+                                        "text-[9px] font-extrabold uppercase tracking-widest mb-1",
+                                        isMe ? "text-white/60 text-right" : "text-brand-glow"
+                                    )}>
+                                        {msg.handle || 'Anonymous Member'}
+                                    </p>
                                     <p className="leading-relaxed">{msg.content}</p>
                                 </div>
                             </div>

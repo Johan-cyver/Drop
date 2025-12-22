@@ -214,6 +214,10 @@ export default function JoinPage() {
             }
 
             // 3. Success - Download & Redirect
+            // Cache identity for Tea Lounge
+            localStorage.setItem('user_handle', dropId.replace('@', ''));
+            localStorage.setItem('user_avatar', selectedAvatar);
+
             // Auto download for security
             if (pin) {
                 downloadCredentials(dropId, pin);
@@ -249,6 +253,8 @@ export default function JoinPage() {
             if (res.ok && data.success) {
                 // Restore Identity!
                 localStorage.setItem('device_id', data.device_id);
+                localStorage.setItem('user_handle', data.handle || '');
+                if (data.avatar) localStorage.setItem('user_avatar', data.avatar);
                 // Force reload/redirect
                 window.location.href = '/';
             } else {

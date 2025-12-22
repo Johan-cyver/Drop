@@ -51,7 +51,12 @@ export default function MyLogicPage() {
         try {
             const res = await fetch(`/api/user/profile?device_id=${did}`);
             const data = await res.json();
-            if (data.user) setUser(data.user);
+            if (data.user) {
+                setUser(data.user);
+                // Cache for Tea Lounge
+                localStorage.setItem('user_handle', data.user.handle || '');
+                if (data.user.avatar) localStorage.setItem('user_avatar', data.user.avatar);
+            }
             if (data.posts) {
                 setPosts(data.posts.map((p: any) => ({ ...p, myVote: 0 })));
             }

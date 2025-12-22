@@ -92,6 +92,9 @@ export default function Home() {
             }
 
             if (data.hasHandle) {
+                // Cache identity for Tea Lounge
+                localStorage.setItem('user_handle', data.handle || '');
+                if (data.avatar) localStorage.setItem('user_avatar', data.avatar);
                 return { college_id: data.college_id };
             }
             return null;
