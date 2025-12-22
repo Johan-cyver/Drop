@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const userRes = await sql`SELECT handle, shadow_banned FROM users WHERE device_id = ${device_id}`;
+        const userRes = await sql`SELECT handle, shadow_banned, college_id FROM users WHERE device_id = ${device_id}`;
         const user = userRes.rows[0];
 
         if (!user) {
@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
             exists: true,
             hasHandle: !!user.handle,
             handle: user.handle,
+            college_id: user.college_id,
             blocked: user.shadow_banned === true // Explicit boolean check for Postgres
         });
 

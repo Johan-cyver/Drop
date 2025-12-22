@@ -18,6 +18,9 @@ export default function Home() {
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [deviceId, setDeviceId] = useState('');
     const [hotCount, setHotCount] = useState(0);
+    const [colleges, setColleges] = useState<any[]>([]);
+    const [selectedCollegeId, setSelectedCollegeId] = useState<string | null>(null);
+    const [userCollegeId, setUserCollegeId] = useState<string | null>(null);
 
     const router = useRouter();
 
@@ -32,9 +35,12 @@ export default function Home() {
         setDeviceId(did);
 
         // Auth Check & Initial Fetch
-        checkAuth(did).then(isAuthenticated => {
-            if (isAuthenticated) {
-                fetchFeed(did);
+        checkAuth(did).then(user => {
+            if (user && user.college_id) {
+                setUserCollegeId(user.college_id);
+                setSelectedCollegeId(user.college_id);
+                fetchFeed(did, user.college_id);
+                fetchColleges();
             } else {
                 router.push('/join');
             }
@@ -45,7 +51,7 @@ export default function Home() {
             if (did) {
                 // Check Ban Status + Fetch Feed
                 checkAuth(did).then(good => {
-                    if (good) fetchFeed(did);
+                    if (good) fetchFeed(did, selectedCollegeId || undefined);
                     else router.push('/join');
                 });
             }
@@ -53,7 +59,7 @@ export default function Home() {
 
         // Fetch on focus
         const handleFocus = () => {
-            if (did) fetchFeed(did);
+            if (did) fetchFeed(did, selectedCollegeId || undefined);
         };
         window.addEventListener('focus', handleFocus);
 
@@ -63,6 +69,18 @@ export default function Home() {
         };
     }, []);
 
+    const fetchColleges = async () => {
+        try {
+            const res = await fetch('/api/colleges');
+            const data = await res.json();
+            if (data.colleges) {
+                setColleges(data.colleges);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const checkAuth = async (did: string) => {
         try {
             const res = await fetch(`/api/user/check?device_id=${did}`);
@@ -70,18 +88,22 @@ export default function Home() {
 
             if (data.blocked) {
                 router.push('/banned');
-                return false;
+                return null;
             }
 
-            return !!data.hasHandle;
+            if (data.hasHandle) {
+                return { college_id: data.college_id };
+            }
+            return null;
         } catch (e) {
-            return false;
+            return null;
         }
     };
 
-    const fetchFeed = async (did?: string) => {
+    const fetchFeed = async (did?: string, collegeId?: string) => {
         try {
-            const res = await fetch(`/api/feed?device_id=${did || deviceId}`);
+            const url = `/api/feed?device_id=${did || deviceId}${collegeId ? `&college_id=${collegeId}` : ''}`;
+            const res = await fetch(url);
             const data = await res.json();
             if (data.feed) {
                 setPosts(data.feed);
@@ -90,6 +112,11 @@ export default function Home() {
         } catch (e) {
             console.error(e);
         }
+    };
+
+    const handleCollegeChange = (id: string) => {
+        setSelectedCollegeId(id);
+        fetchFeed(deviceId, id);
     };
 
     const handleVote = async (id: string, val: number) => {
@@ -159,7 +186,14 @@ export default function Home() {
                 onFeedback={() => setIsFeedbackOpen(true)}
             />
 
-            <Feed posts={posts} onVote={handleVote} />
+            <Feed
+                posts={posts}
+                onVote={handleVote}
+                colleges={colleges}
+                selectedCollegeId={selectedCollegeId}
+                onCollegeChange={handleCollegeChange}
+                userCollegeId={userCollegeId}
+            />
 
             <Widgets />
 

@@ -49,13 +49,7 @@ export async function GET(req: NextRequest) {
         if (parseInt(collegesRes.rows[0].count) === 0) {
             console.log("Seeding colleges...");
             // We use a simplified seed for the setup route
-            const defaultColleges = [
-                ['rvce', 'RV College of Engineering', 'Bengaluru'],
-                ['bmsce', 'BMS College of Engineering', 'Bengaluru'],
-                ['pes-rr', 'PES University (RR Campus)', 'Bengaluru'],
-                ['msrit', 'Ramaiah Institute of Technology', 'Bengaluru'],
-                ['mit-manipal', 'Manipal Institute of Technology', 'Manipal']
-            ];
+            const defaultColleges: string[][] = [];
             for (const [id, name, city] of defaultColleges) {
                 await sql`INSERT INTO colleges (id, name, city) VALUES (${id}, ${name}, ${city}) ON CONFLICT DO NOTHING`;
             }
@@ -93,7 +87,7 @@ export async function GET(req: NextRequest) {
         await sql`
             CREATE TABLE IF NOT EXISTS confessions (
                 id TEXT PRIMARY KEY,
-                public_id TEXT, 
+                public_id TEXT,
                 content TEXT,
                 college_id TEXT,
                 device_id TEXT,
@@ -135,7 +129,12 @@ export async function GET(req: NextRequest) {
             );
         `;
 
-        // 4. Feedback Table
+        // Migration: Make all existing colleges VERIFIED for the new filter
+        try {
+            await sql`UPDATE colleges SET status = 'VERIFIED' WHERE status = 'PENDING'`;
+        } catch (e) {
+            console.log("Migration (colleges status) error or already done:", e);
+        }
         await sql`
             CREATE TABLE IF NOT EXISTS feedback (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

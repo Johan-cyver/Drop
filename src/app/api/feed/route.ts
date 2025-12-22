@@ -8,16 +8,22 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const deviceId = searchParams.get('device_id');
+        const filterCollegeId = searchParams.get('college_id'); // Optional college filter
 
-        // 0. Get User's College
-        const userRes = await sql`SELECT college_id FROM users WHERE device_id = ${deviceId}`;
-        const user = userRes.rows[0];
+        // 1. Determine which college to show
+        let targetCollegeId = filterCollegeId;
 
-        if (!user || !user.college_id) {
+        if (!targetCollegeId && deviceId) {
+            // Get User's Default College if no filter is provided
+            const userRes = await sql`SELECT college_id FROM users WHERE device_id = ${deviceId}`;
+            targetCollegeId = userRes.rows[0]?.college_id;
+        }
+
+        if (!targetCollegeId) {
             return NextResponse.json({
                 feed: [],
                 meta: { hotCount: 0, newCount: 0 },
-                msg: "User not found or no college joined"
+                msg: "No college selected or found"
             });
         }
 
@@ -38,7 +44,7 @@ export async function GET(req: NextRequest) {
             LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
             LEFT JOIN users u ON u.device_id = c.device_id
             WHERE c.status = 'LIVE' 
-                AND c.college_id = ${user.college_id}
+                AND c.college_id = ${targetCollegeId}
                 AND (c.expires_at IS NULL OR c.expires_at > NOW())
             ORDER BY c.created_at DESC
             LIMIT 200

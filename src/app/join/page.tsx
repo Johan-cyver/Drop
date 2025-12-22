@@ -392,7 +392,11 @@ export default function JoinPage() {
                                             <div className="text-center py-4 text-gray-600 text-[10px] animate-pulse uppercase font-black">Finding Colleges...</div>
                                         )}
                                         {!fetchingColleges && colleges.length === 0 && (
-                                            <div className="text-center py-4 text-gray-600 text-xs italic">No colleges found</div>
+                                            <div className="text-center py-6 px-4 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                                                <div className="text-2xl mb-2">🎓</div>
+                                                <p className="text-gray-400 text-xs italic mb-2">No colleges found</p>
+                                                <p className="text-[10px] text-gray-600 uppercase font-bold tracking-widest">Try suggesting yours below!</p>
+                                            </div>
                                         )}
                                         {colleges.map((college) => (
                                             <button
@@ -452,7 +456,7 @@ export default function JoinPage() {
 
                             <button
                                 type="submit"
-                                disabled={loading || !displayName || !dropId || pin.length < 4}
+                                disabled={loading || !displayName || !dropId || pin.length < 4 || !collegeId}
                                 className="w-full py-4 rounded-2xl bg-gradient-to-r from-brand-start to-brand-end font-bold text-lg text-white shadow-lg lg:hover:shadow-brand-glow/40 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? 'Minting Identity...' : 'Confirm Identity'}
