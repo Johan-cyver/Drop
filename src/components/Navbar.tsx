@@ -1,4 +1,4 @@
-import { Home, Compass, Bell, User, Plus, MessageSquare } from 'lucide-react';
+import { Home, Compass, Bell, User, Plus, MessageSquare, Zap } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -23,9 +23,10 @@ export default function Navbar({ onCompose, onFeedback }: { onCompose: () => voi
 
     const navItems = [
         { icon: Home, label: 'Confession', href: '/', active: pathname === '/' },
+        { icon: Zap, label: 'Open Drops', href: '/open', active: pathname === '/open' },
         { icon: Compass, label: 'Discover', href: '/discover', active: pathname === '/discover' },
         { icon: Bell, label: 'Activity', href: '/notifications', active: pathname === '/notifications' },
-        { icon: User, label: 'My Logic', href: '/my-logic', active: pathname === '/my-logic' },
+        { icon: User, label: 'Profile', href: '/my-logic', active: pathname === '/my-logic' },
     ];
 
     return (
