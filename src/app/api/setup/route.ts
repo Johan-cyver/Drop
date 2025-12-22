@@ -49,7 +49,13 @@ export async function GET(req: NextRequest) {
         if (parseInt(collegesRes.rows[0].count) === 0) {
             console.log("Seeding colleges...");
             // We use a simplified seed for the setup route
-            const defaultColleges: string[][] = [];
+            const defaultColleges = [
+                ['rvce', 'RV College of Engineering', 'Bengaluru'],
+                ['bmsce', 'BMS College of Engineering', 'Bengaluru'],
+                ['pes-rr', 'PES University (RR Campus)', 'Bengaluru'],
+                ['msrit', 'Ramaiah Institute of Technology', 'Bengaluru'],
+                ['mit-manipal', 'Manipal Institute of Technology', 'Manipal']
+            ];
             for (const [id, name, city] of defaultColleges) {
                 await sql`INSERT INTO colleges (id, name, city) VALUES (${id}, ${name}, ${city}) ON CONFLICT DO NOTHING`;
             }
