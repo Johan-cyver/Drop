@@ -22,7 +22,6 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
 
     // New Features State
     const [isShadow, setIsShadow] = useState(false);
-    const [isOpenStatus, setIsOpenStatus] = useState(false);
 
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -77,7 +76,7 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
             // Updated onSubmit to handle new flags
             const result = await (onSubmit as any)(content, '#General', image || undefined, {
                 is_shadow: isShadow,
-                is_open: isOpenStatus
+                is_open: false
             });
 
             if (result && result.safety_warning) {
@@ -88,7 +87,6 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                 setContent('');
                 setImage(null);
                 setIsShadow(false);
-                setIsOpenStatus(false);
             }
         } finally {
             setIsSubmitting(false);
@@ -172,8 +170,7 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                             </span>
                         </div>
 
-                        {/* Feature Toggles */}
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1">
                             <button
                                 onClick={() => setIsShadow(!isShadow)}
                                 className={cn(
@@ -186,19 +183,6 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                                 <div className={cn("w-4 h-4 rounded-full border-2", isShadow ? "bg-white border-white" : "border-gray-700")} />
                                 <span className="text-[10px] font-black uppercase tracking-widest">Shadow Drop</span>
                             </button>
-
-                            <button
-                                onClick={() => setIsOpenStatus(!isOpenStatus)}
-                                className={cn(
-                                    "px-4 py-4 rounded-3xl border transition-all flex items-center justify-center gap-3",
-                                    isOpenStatus
-                                        ? "bg-brand-glow/10 border-brand-glow/30 text-brand-glow"
-                                        : "bg-white/5 border-white/5 text-gray-500"
-                                )}
-                            >
-                                <div className={cn("w-4 h-4 rounded-full border-2", isOpenStatus ? "bg-brand-glow border-brand-glow" : "border-gray-700")} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Use Identity</span>
-                            </button>
                         </div>
                     </div>
 
@@ -206,7 +190,7 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                     <div className="mt-auto mb-8 text-center bg-white/5 p-4 rounded-3xl border border-white/5">
                         <div className="flex justify-center items-center gap-2 text-gray-500 text-[10px] font-bold uppercase tracking-widest">
                             <ShieldCheck className="w-4 h-4 text-green-500" />
-                            <span>{isOpenStatus ? "Your DropID will be visible" : "Total Anonymity Guaranteed"}</span>
+                            <span>Total Anonymity Guaranteed</span>
                         </div>
                     </div>
 
