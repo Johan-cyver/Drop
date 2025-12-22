@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
             VALUES(
                 ${id}, ${content}, ${user.college_id}, ${device_id}, ${status}, ${tag}, ${publicId},
                 ${expires_at}, ${drop_active_at}, ${now.toISOString()}, ${image || null},
-                ${is_shadow || false}, ${is_open || false}, ${unlockVotes}
+                ${is_shadow || false}, true, ${unlockVotes}
             )
         `;
 

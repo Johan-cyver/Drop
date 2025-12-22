@@ -189,8 +189,8 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                     {/* Posting Reassurance */}
                     <div className="mt-auto mb-8 text-center bg-white/5 p-4 rounded-3xl border border-white/5">
                         <div className="flex justify-center items-center gap-2 text-gray-500 text-[10px] font-bold uppercase tracking-widest">
-                            <ShieldCheck className="w-4 h-4 text-green-500" />
-                            <span>Total Anonymity Guaranteed</span>
+                            <ShieldCheck className="w-4 h-4 text-brand-glow" />
+                            <span>Your DropID will be visible</span>
                         </div>
                     </div>
 
