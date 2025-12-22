@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql } from '@vercel/postgres';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({ error: 'Database not connected' }, { status: 500 });
+        }
         const confessionId = params.id;
 
         const messagesRes = await sql`
@@ -15,17 +20,21 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
         return NextResponse.json(messagesRes.rows);
     } catch (err: any) {
+        console.error('Chat GET Error:', err);
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({ error: 'Database not connected' }, { status: 500 });
+        }
         const confessionId = params.id;
         const { device_id, handle, avatar, content } = await req.json();
 
         if (!content || !device_id) {
-            return NextResponse.json({ error: 'Missing logic' }, { status: 400 });
+            return NextResponse.json({ error: 'Missing content or device_id' }, { status: 400 });
         }
 
         const msgRes = await sql`
@@ -36,6 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
         return NextResponse.json(msgRes.rows[0]);
     } catch (err: any) {
+        console.error('Chat POST Error:', err);
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }
