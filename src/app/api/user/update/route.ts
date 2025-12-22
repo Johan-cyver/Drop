@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql } from '@vercel/postgres';
 import crypto from 'crypto';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({ error: 'Database not connected (POSTGRES_URL missing)' }, { status: 500 });
+        }
+
         const { device_id, handle: rawHandle, avatar, name, pin, college_id } = await req.json();
         const handle = rawHandle?.trim(); // Ensure no whitespace
 

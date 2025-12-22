@@ -3,8 +3,14 @@ import { sql } from '@vercel/postgres';
 import { randomUUID } from 'crypto';
 import { calculateTemporalTimestamps } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({ error: 'Database not connected (POSTGRES_URL missing)' }, { status: 500 });
+        }
+
         const body = await req.json();
         const { content, device_id, image, is_shadow, is_open } = body;
 

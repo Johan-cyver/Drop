@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql } from '@vercel/postgres';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({ error: 'Database not connected (POSTGRES_URL missing)' }, { status: 500 });
+        }
+
         const body = await req.json();
         const { confession_id, value, device_id } = body; // value: 1 or -1
 

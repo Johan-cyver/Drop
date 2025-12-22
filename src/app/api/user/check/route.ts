@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql } from '@vercel/postgres';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -10,6 +12,10 @@ export async function GET(req: NextRequest) {
     }
 
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({ error: 'Database not connected (POSTGRES_URL missing)' }, { status: 500 });
+        }
+
         const userRes = await sql`SELECT handle, shadow_banned, college_id FROM users WHERE device_id = ${device_id}`;
         const user = userRes.rows[0];
 

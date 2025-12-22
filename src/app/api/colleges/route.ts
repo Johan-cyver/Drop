@@ -5,6 +5,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({ error: 'Database not connected (POSTGRES_URL missing)' }, { status: 500 });
+        }
+
         const { searchParams } = new URL(req.url);
         const query = searchParams.get('q') || '';
 

@@ -2,8 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { v4 as uuidv4 } from 'uuid';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({
+                error: 'DATABASE_NOT_CONNECTED',
+                details: 'Connection string missing or POSTGRES_URL not found.'
+            }, { status: 500 });
+        }
+
         const body = await req.json();
         const { name, city, device_id } = body;
 
@@ -21,7 +30,6 @@ export async function POST(req: NextRequest) {
         `;
 
         // 3. Update the user who suggested it to automatically "Join" this college
-        // This ensures they are immediately available for the user who created them.
         await sql`
             UPDATE users 
             SET college_id = ${collegeId}
