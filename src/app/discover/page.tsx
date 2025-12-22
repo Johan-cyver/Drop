@@ -164,7 +164,7 @@ function DiscoverContent() {
                         )}
 
                         {results.map(post => (
-                            <ConfessionCard key={post.id} post={post} onVote={handleVote} />
+                            <ConfessionCard key={post.id} post={post} onVote={handleVote} hideIdentity={true} />
                         ))}
                     </section>
                 </div>

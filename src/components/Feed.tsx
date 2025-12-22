@@ -10,14 +10,16 @@ export default function Feed({
     colleges = [],
     selectedCollegeId,
     onCollegeChange,
-    userCollegeId
+    userCollegeId,
+    hideIdentity = true
 }: {
     posts: Post[],
     onVote: (id: string, val: number) => void,
     colleges?: any[],
     selectedCollegeId?: string | null,
     onCollegeChange?: (id: string) => void,
-    userCollegeId?: string | null
+    userCollegeId?: string | null,
+    hideIdentity?: boolean
 }) {
     const [filter, setFilter] = useState<'new' | 'hot'>('new');
     const [nextDropCountdown, setNextDropCountdown] = useState('');
@@ -141,7 +143,7 @@ export default function Feed({
                 <div className="flex flex-col gap-4 px-4 lg:px-6">
                     {sortedPosts.length > 0 ? (
                         sortedPosts.map(post => (
-                            <ConfessionCard key={post.id} post={post} onVote={onVote} />
+                            <ConfessionCard key={post.id} post={post} onVote={onVote} hideIdentity={hideIdentity} />
                         ))
                     ) : (
                         <div className="flex flex-col items-center justify-center py-20 px-10 text-center glass-panel rounded-3xl border border-white/5">

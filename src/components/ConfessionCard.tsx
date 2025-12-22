@@ -34,9 +34,10 @@ export interface Post {
 interface ConfessionCardProps {
     post: Post;
     onVote: (id: string, value: number) => void;
+    hideIdentity?: boolean;
 }
 
-export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
+export default function ConfessionCard({ post, onVote, hideIdentity = false }: ConfessionCardProps) {
     const voteStatus = post.myVote || 0;
     const isTrending = (post.hotScore && post.hotScore > 10) || post.upvotes >= 10;
     const isDropActive = post.isDropActive || false;
@@ -107,7 +108,8 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
     }, [post.expires_at, isDropActive, currentTime]);
 
     // Avatar Logic (DiceBear fallbacks)
-    const avatarUrl = post.is_open && post.avatar
+    const canShowIdentity = post.is_open && !hideIdentity;
+    const avatarUrl = canShowIdentity && post.avatar
         ? (post.avatar.startsWith('data:') ? post.avatar : `https://api.dicebear.com/7.x/bottts/svg?seed=${post.avatar}`)
         : `https://api.dicebear.com/7.x/bottts/svg?seed=${post.public_id || 'ghost'}`;
 
@@ -137,7 +139,7 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
                             <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                         </div>
                         <div className="flex flex-col">
-                            {post.is_open && post.handle ? (
+                            {canShowIdentity && post.handle ? (
                                 <Link
                                     href={`/profile/${post.handle}`}
                                     className="text-sm font-black tracking-tight text-brand-glow hover:underline hover:text-white transition-all"
