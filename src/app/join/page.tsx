@@ -29,6 +29,7 @@ export default function JoinPage() {
 
     // UI State
     const [loading, setLoading] = useState(false);
+    const [syncing, setSyncing] = useState(false);
     const [error, setError] = useState('');
     const [deviceId, setDeviceId] = useState('');
     const [showCollegeModal, setShowCollegeModal] = useState(false);
@@ -59,6 +60,24 @@ export default function JoinPage() {
             console.error('Failed to fetch colleges', e);
         } finally {
             setFetchingColleges(false);
+        }
+    };
+
+    const handleSyncDB = async () => {
+        setSyncing(true);
+        try {
+            const res = await fetch('/api/setup');
+            if (res.ok) {
+                alert('Database initialized! Colleges seeded.');
+                fetchColleges();
+            } else {
+                const data = await res.json();
+                setError('Setup failed: ' + (data.message || data.error));
+            }
+        } catch (e) {
+            setError('Failed to reach setup endpoint');
+        } finally {
+            setSyncing(false);
         }
     };
 
@@ -394,8 +413,15 @@ export default function JoinPage() {
                                         {!fetchingColleges && colleges.length === 0 && (
                                             <div className="text-center py-6 px-4 bg-white/5 rounded-2xl border border-dashed border-white/10">
                                                 <div className="text-2xl mb-2">🎓</div>
-                                                <p className="text-gray-400 text-xs italic mb-2">No colleges found</p>
-                                                <p className="text-[10px] text-gray-600 uppercase font-bold tracking-widest">Try suggesting yours below!</p>
+                                                <p className="text-gray-400 text-xs italic mb-4">No colleges found in this environment</p>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSyncDB}
+                                                    disabled={syncing}
+                                                    className="px-4 py-2 bg-brand-glow/20 border border-brand-glow/30 rounded-xl text-[10px] font-black uppercase tracking-widest text-brand-glow hover:bg-brand-glow/30 transition-all disabled:opacity-50"
+                                                >
+                                                    {syncing ? 'Syncing...' : 'Initialize Colleges'}
+                                                </button>
                                             </div>
                                         )}
                                         {colleges.map((college) => (

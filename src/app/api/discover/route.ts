@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql } from '@vercel/postgres';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({ error: 'Database not connected' }, { status: 500 });
+        }
+
         const { searchParams } = new URL(req.url);
         const queryTerm = searchParams.get('q'); // Search query
         const openDrops = searchParams.get('open'); // New: Fetch open drops
@@ -46,7 +50,9 @@ export async function GET(req: NextRequest) {
                 myVote: parseInt(row.myvote || '0'),
                 upvotes: parseInt(row.upvotes || '0'),
                 downvotes: parseInt(row.downvotes || '0'),
-                comment_count: parseInt(row.comment_count || '0')
+                comment_count: parseInt(row.comment_count || '0'),
+                is_open: !!row.is_open,
+                is_shadow: !!row.is_shadow
             }));
             return NextResponse.json({ results });
         }
@@ -73,7 +79,9 @@ export async function GET(req: NextRequest) {
                 myVote: parseInt(row.myvote || '0'),
                 upvotes: parseInt(row.upvotes || '0'),
                 downvotes: parseInt(row.downvotes || '0'),
-                comment_count: parseInt(row.comment_count || '0')
+                comment_count: parseInt(row.comment_count || '0'),
+                is_open: !!row.is_open,
+                is_shadow: !!row.is_shadow
             }));
             return NextResponse.json({ results });
         }

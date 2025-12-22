@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({ error: 'Database not connected' }, { status: 500 });
+        }
         const { device_id, name, avatar } = await req.json();
 
         if (!device_id) {

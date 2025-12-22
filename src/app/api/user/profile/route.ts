@@ -5,6 +5,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
     try {
+        if (!process.env.POSTGRES_URL) {
+            return NextResponse.json({ error: 'Database not connected' }, { status: 500 });
+        }
+
         const { searchParams } = new URL(req.url);
         const deviceId = searchParams.get('device_id');
 
@@ -25,7 +29,13 @@ export async function GET(req: NextRequest) {
             WHERE device_id = ${deviceId} 
             ORDER BY created_at DESC
         `;
-        const myPosts = myPostsRes.rows;
+        const myPosts = myPostsRes.rows.map(row => ({
+            ...row,
+            is_open: !!row.is_open,
+            is_shadow: !!row.is_shadow,
+            upvotes: parseInt(row.upvotes || '0'),
+            downvotes: parseInt(row.downvotes || '0')
+        }));
 
         // 3. Simple Stats
         const totalUpvotes = myPosts.reduce((acc, p) => acc + (p.upvotes || 0), 0);
