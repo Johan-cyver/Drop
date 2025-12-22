@@ -1,9 +1,10 @@
-import { ArrowBigUp, ArrowBigDown, Send, Clock, Bookmark, Share2, Sparkles, MessageCircle } from 'lucide-react';
+import { ArrowBigUp, ArrowBigDown, Send, Clock, Bookmark, Share2, Sparkles, MessageCircle, Zap } from 'lucide-react';
 import { cn, formatNumber, formatTime, formatCountdown, getTimeRemaining } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import ShareModal from './ShareModal';
+import DropChat from './DropChat';
 
 export interface Post {
     id: string;
@@ -20,10 +21,14 @@ export interface Post {
     public_id?: string;
     expires_at?: string;
     drop_active_at?: string;
-    isDropActive?: boolean;
+    is_shadow?: boolean;
+    is_open?: boolean;
+    unlock_votes?: number;
     comment_count?: number;
     image?: string; // Data URI for camera photo
     color?: string; // Custom card color for sharing
+    isDropActive?: boolean;
+    reactions?: { emoji: string; count: number; active?: boolean }[];
 }
 
 interface ConfessionCardProps {
@@ -36,6 +41,40 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
     const isTrending = (post.hotScore && post.hotScore > 10) || post.upvotes >= 10;
     const isDropActive = post.isDropActive || false;
     const [isShareOpen, setIsShareOpen] = useState(false);
+    const [isChatOpen, setIsChatOpen] = useState(false);
+
+    // Shadow Drop Logic
+    const isShadowLocked = post.is_shadow && post.upvotes < (post.unlock_votes || 5);
+    const unlockProgress = Math.min(100, (post.upvotes / (post.unlock_votes || 5)) * 100);
+
+    // Reactions
+    const [reactions, setReactions] = useState(post.reactions || []);
+    const emojis = ['🔥', '😂', '😮', '🧊', '🚩'];
+
+    const handleReaction = async (emoji: string) => {
+        // Optimistic
+        const existing = reactions.find(r => r.emoji === emoji);
+        let newReactions;
+        if (existing?.active) {
+            newReactions = reactions.map(r => r.emoji === emoji ? { ...r, count: r.count - 1, active: false } : r);
+        } else if (existing) {
+            newReactions = reactions.map(r => r.emoji === emoji ? { ...r, count: r.count + 1, active: true } : r);
+        } else {
+            newReactions = [...reactions, { emoji, count: 1, active: true }];
+        }
+        setReactions(newReactions);
+
+        try {
+            const did = localStorage.getItem('device_id');
+            await fetch('/api/reactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confession_id: post.id, emoji, device_id: did })
+            });
+        } catch (e) {
+            console.error('Reaction failed', e);
+        }
+    };
 
     // Real-time timestamp updates
     const [currentTime, setCurrentTime] = useState(Date.now());
@@ -67,13 +106,21 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
         return remaining > 0 ? formatCountdown(remaining) : null;
     }, [post.expires_at, isDropActive, currentTime]);
 
+    // Avatar Logic (DiceBear fallbacks)
+    const avatarUrl = post.is_open && post.avatar
+        ? (post.avatar.startsWith('data:') ? post.avatar : `https://api.dicebear.com/7.x/bottts/svg?seed=${post.avatar}`)
+        : `https://api.dicebear.com/7.x/bottts/svg?seed=${post.public_id || 'ghost'}`;
+
     return (
         <>
             <motion.article
                 layout
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden group border border-white/5 hover:border-white/10 transition-all duration-500"
+                className={cn(
+                    "glass-card rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden group border transition-all duration-500",
+                    post.is_shadow ? "border-white/20" : "border-white/5 hover:border-white/10"
+                )}
             >
                 {/* Dynamic Background Effect */}
                 <div className={cn(
@@ -86,20 +133,29 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
                 {/* Header */}
                 <div className="flex justify-between items-start mb-6 relative z-10">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl shadow-xl overflow-hidden backdrop-blur-md">
-                            👻
+                        <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl shadow-xl overflow-hidden backdrop-blur-md relative">
+                            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-black tracking-tight text-white/90">
-                                {post.public_id || 'Anonymous'}
-                            </span>
+                            {post.is_open && post.handle ? (
+                                <Link
+                                    href={`/profile/${post.handle}`}
+                                    className="text-sm font-black tracking-tight text-brand-glow hover:underline hover:text-white transition-all"
+                                >
+                                    {post.handle}
+                                </Link>
+                            ) : (
+                                <span className="text-sm font-black tracking-tight text-white/90">
+                                    {post.public_id || 'Anonymous'}
+                                </span>
+                            )}
                             <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                                     {timeAgo}
                                 </span>
-                                {post.velocity && (
-                                    <span className="text-[9px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
-                                        {post.velocity}
+                                {post.is_shadow && (
+                                    <span className="text-[9px] font-black text-white bg-black px-2 py-0.5 rounded-full border border-white/20 flex items-center gap-1">
+                                        <Sparkles className="w-2 h-2" /> SHADOW
                                     </span>
                                 )}
                             </div>
@@ -115,23 +171,70 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
                 </div>
 
                 {/* Content */}
-                <Link href={`/confession/${post.id}`} className="relative z-10 block mb-6">
-                    <p className="text-xl md:text-2xl font-bold text-white leading-tight mb-4 tracking-tight">
-                        {post.content}
-                    </p>
+                <div className="relative z-10 mb-6">
+                    <Link href={`/confession/${post.id}`} className="block">
+                        <p className={cn(
+                            "text-xl md:text-2xl font-bold text-white leading-tight mb-4 tracking-tight transition-all duration-700",
+                            isShadowLocked ? "blur-xl select-none opacity-50" : "blur-0"
+                        )}>
+                            {post.content}
+                        </p>
+                    </Link>
+
+                    {isShadowLocked && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                            <div className="bg-black/60 backdrop-blur-md border border-white/10 p-6 rounded-[2rem] shadow-2xl space-y-3">
+                                <p className="text-xs font-black uppercase tracking-[0.2em] text-white/50">Curiosity Unlock</p>
+                                <p className="text-sm font-bold text-white">Unlock this tea with {post.unlock_votes || 5} Upvotes</p>
+                                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden border border-white/5">
+                                    <div
+                                        className="h-full bg-brand-glow shadow-[0_0_15px_rgba(139,92,246,0.6)] transition-all duration-1000"
+                                        style={{ width: `${unlockProgress}%` }}
+                                    />
+                                </div>
+                                <p className="text-[10px] font-black text-brand-glow">{post.upvotes} / {post.unlock_votes || 5}</p>
+                            </div>
+                        </div>
+                    )}
+
                     {post.tag && (
                         <span className="text-brand-glow text-[10px] font-black uppercase tracking-[0.2em] opacity-80">
                             #{post.tag.replace('#', '')}
                         </span>
                     )}
-                </Link>
+                </div>
 
-                {post.image && (
+                {post.image && !isShadowLocked && (
                     <div className="relative w-full aspect-video rounded-3xl overflow-hidden mb-6 border border-white/5 shadow-2xl">
                         <img src={post.image} alt="Confession" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                     </div>
                 )}
+
+                {/* Reactions Bar */}
+                <div className="relative z-10 flex flex-wrap gap-2 mb-6">
+                    {emojis.map(emoji => {
+                        const countObj = reactions.find(r => r.emoji === emoji);
+                        const count = countObj ? countObj.count : 0;
+                        const active = countObj ? countObj.active : false;
+
+                        return (
+                            <button
+                                key={emoji}
+                                onClick={(e) => { e.preventDefault(); handleReaction(emoji); }}
+                                className={cn(
+                                    "flex items-center gap-2 px-3 py-1.5 rounded-2xl border transition-all active:scale-90",
+                                    active
+                                        ? "bg-brand-glow/10 border-brand-glow/30 text-white"
+                                        : "bg-white/5 border-transparent text-gray-400 hover:bg-white/10"
+                                )}
+                            >
+                                <span className="text-lg">{emoji}</span>
+                                {count > 0 && <span className="text-[10px] font-black font-mono">{count}</span>}
+                            </button>
+                        );
+                    })}
+                </div>
 
                 {/* Premium Timer / Status Bar */}
                 {isDropActive && expiryCountdown && (
@@ -175,6 +278,15 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {post.is_open && (
+                            <button
+                                onClick={(e) => { e.preventDefault(); setIsChatOpen(true); }}
+                                className="h-12 px-4 flex items-center justify-center rounded-2xl bg-brand-glow/10 hover:bg-brand-glow text-brand-glow hover:text-white border border-brand-glow/20 transition-all flex gap-2"
+                            >
+                                <Zap className="w-4 h-4 fill-current" />
+                                <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">Tea Lounge</span>
+                            </button>
+                        )}
                         <Link
                             href={`/confession/${post.id}`}
                             className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-brand-glow border border-white/5 transition-all flex flex-col items-center justify-center gap-0.5"
@@ -219,6 +331,18 @@ export default function ConfessionCard({ post, onVote }: ConfessionCardProps) {
                 onClose={() => setIsShareOpen(false)}
                 post={post}
             />
+
+            <AnimatePresence>
+                {isChatOpen && (
+                    <DropChat
+                        confessionId={post.id}
+                        deviceId={localStorage.getItem('device_id') || ''}
+                        userHandle={localStorage.getItem('user_handle') || undefined}
+                        userAvatar={localStorage.getItem('user_avatar') || undefined}
+                        onClose={() => setIsChatOpen(false)}
+                    />
+                )}
+            </AnimatePresence>
         </>
     );
 }

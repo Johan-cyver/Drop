@@ -15,7 +15,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                 COALESCE(v.value, 0) as myVote,
                 u.handle,
                 u.avatar,
-                c.image
+                c.image,
+                c.is_shadow,
+                c.is_open,
+                c.unlock_votes
             FROM confessions c
             LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
             LEFT JOIN users u ON u.device_id = c.device_id
@@ -40,13 +43,26 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             ORDER BY c.created_at ASC
         `;
 
+        // Fetch Reactions
+        const reactionsRes = await sql`
+            SELECT emoji, COUNT(*) as count,
+                   EXISTS(SELECT 1 FROM reactions r2 WHERE r2.confession_id = r.confession_id AND r2.emoji = r.emoji AND r2.device_id = ${deviceId}) as active
+            FROM reactions r
+            WHERE confession_id = ${id}
+            GROUP BY emoji
+        `;
+
         // Standardize types
         const formattedPost = {
             ...post,
             myVote: parseInt(post.myvote || '0'),
-            upvotes: post.upvotes || 0,
-            downvotes: post.downvotes || 0,
-            comments: commentsRes.rows
+            upvotes: parseInt(post.upvotes || '0'),
+            downvotes: parseInt(post.downvotes || '0'),
+            is_shadow: !!post.is_shadow,
+            is_open: !!post.is_open,
+            unlock_votes: parseInt(post.unlock_votes || '0'),
+            comments: commentsRes.rows,
+            reactions: reactionsRes.rows.map(r => ({ emoji: r.emoji, count: parseInt(r.count), active: !!r.active }))
         };
 
         return NextResponse.json(formattedPost);

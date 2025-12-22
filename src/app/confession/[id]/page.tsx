@@ -36,6 +36,11 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
             }
             const data = await res.json();
             setPost(data);
+
+            // Deep-linking: save college_id for guest redirection
+            if (data.college_id) {
+                localStorage.setItem('suggested_college_id', data.college_id);
+            }
         } catch (e) {
             console.error(e);
             setError(true);
@@ -138,11 +143,17 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
             <ComposeModal
                 isOpen={isComposeOpen}
                 onClose={() => setIsComposeOpen(false)}
-                onSubmit={async (content, tag, image) => {
+                onSubmit={async (content, tag, image, options: any) => {
                     const res = await fetch('/api/confess', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ content, device_id: deviceId, image })
+                        body: JSON.stringify({
+                            content,
+                            device_id: deviceId,
+                            image,
+                            is_shadow: options?.is_shadow,
+                            is_open: options?.is_open
+                        })
                     });
                     const data = await res.json();
                     if (res.ok) {

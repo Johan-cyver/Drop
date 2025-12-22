@@ -14,19 +14,34 @@ export default function CameraCapture({ onCapture, onCancel }: CameraCaptureProp
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
 
-    const startCamera = async () => {
+    const startCamera = async (mode: 'user' | 'environment' = facingMode) => {
         try {
+            // Stop existing tracks first
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+
             const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user' },
+                video: { facingMode: mode },
                 audio: false
             });
             setStream(mediaStream);
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
             }
+            setError(null);
         } catch (err) {
             setError('Camera access denied or not available.');
+        }
+    };
+
+    const toggleCamera = () => {
+        const nextMode = facingMode === 'user' ? 'environment' : 'user';
+        setFacingMode(nextMode);
+        if (stream) {
+            startCamera(nextMode);
         }
     };
 
@@ -74,6 +89,15 @@ export default function CameraCapture({ onCapture, onCancel }: CameraCaptureProp
                             playsInline
                             className="w-full h-full object-cover"
                         />
+                        <div className="absolute inset-x-0 top-0 p-6 flex justify-between items-center z-20">
+                            <button onClick={onCancel} className="p-2 rounded-full bg-black/40 text-white backdrop-blur-md">
+                                <X className="w-6 h-6" />
+                            </button>
+                            <button onClick={toggleCamera} className="p-2 rounded-full bg-black/40 text-white backdrop-blur-md flex items-center gap-2">
+                                <RefreshCw className="w-5 h-5" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">{facingMode === 'user' ? 'Front' : 'Back'}</span>
+                            </button>
+                        </div>
                         <div className="absolute inset-0 border-[20px] border-black/20 pointer-events-none" />
                     </>
                 ) : (
@@ -81,8 +105,11 @@ export default function CameraCapture({ onCapture, onCancel }: CameraCaptureProp
                 )}
 
                 {error && (
-                    <div className="absolute inset-0 flex items-center justify-center p-8 text-center">
-                        <p className="text-red-400 font-bold">{error}</p>
+                    <div className="absolute inset-0 flex items-center justify-center p-8 text-center bg-black/80 backdrop-blur-xl">
+                        <div className="space-y-4">
+                            <p className="text-red-400 font-bold">{error}</p>
+                            <button onClick={() => startCamera()} className="bg-white/10 text-white px-6 py-2 rounded-full font-bold text-sm">Retry</button>
+                        </div>
                     </div>
                 )}
             </div>
@@ -90,18 +117,14 @@ export default function CameraCapture({ onCapture, onCancel }: CameraCaptureProp
             <div className="h-40 bg-black flex items-center justify-around px-8">
                 {!capturedImage ? (
                     <>
-                        <button onClick={onCancel} className="p-4 text-white/60">
-                            <X className="w-8 h-8" />
-                        </button>
+                        <div className="w-8" /> {/* Spacer */}
                         <button
                             onClick={takePhoto}
                             className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center p-1"
                         >
                             <div className="w-full h-full rounded-full bg-white active:scale-95 transition-transform" />
                         </button>
-                        <button onClick={startCamera} className="p-4 text-white/60">
-                            <RefreshCw className="w-8 h-8" />
-                        </button>
+                        <div className="w-8" /> {/* Spacer */}
                     </>
                 ) : (
                     <>
@@ -133,13 +156,17 @@ export default function CameraCapture({ onCapture, onCancel }: CameraCaptureProp
             {/* Initial start check */}
             {!stream && !capturedImage && !error && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black">
-                    <button
-                        onClick={startCamera}
-                        className="bg-brand-glow text-white px-8 py-4 rounded-2xl font-bold text-lg flex items-center gap-3 shadow-2xl"
-                    >
-                        <Camera className="w-6 h-6" />
-                        Access Camera
-                    </button>
+                    <div className="text-center space-y-6">
+                        <div className="w-24 h-24 bg-brand-glow/20 rounded-[2rem] flex items-center justify-center mx-auto border border-brand-glow/30">
+                            <Camera className="w-10 h-10 text-brand-glow" />
+                        </div>
+                        <button
+                            onClick={() => startCamera()}
+                            className="bg-brand-glow text-white px-8 py-4 rounded-2xl font-bold text-lg flex items-center gap-3 shadow-2xl mx-auto"
+                        >
+                            Start Camera
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

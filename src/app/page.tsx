@@ -119,12 +119,18 @@ export default function Home() {
         }
     };
 
-    const handleSubmit = async (content: string, tag: string, image?: string) => {
+    const handleSubmit = async (content: string, tag: string, image?: string, options?: { is_shadow?: boolean, is_open?: boolean }) => {
         try {
             const res = await fetch('/api/confess', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, device_id: deviceId, image })
+                body: JSON.stringify({
+                    content,
+                    device_id: deviceId,
+                    image,
+                    is_shadow: options?.is_shadow,
+                    is_open: options?.is_open
+                })
             });
 
             const data = await res.json();

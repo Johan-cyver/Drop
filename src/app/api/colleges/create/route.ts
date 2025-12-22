@@ -14,10 +14,10 @@ export async function POST(req: NextRequest) {
         // 1. Generate unique college ID
         const collegeId = `clg-${uuidv4().substring(0, 8)}`;
 
-        // 2. Insert into colleges table as PENDING
+        // 2. Insert into colleges table as VERIFIED
         await sql`
             INSERT INTO colleges (id, name, city, status, created_by)
-            VALUES (${collegeId}, ${name}, ${city || 'Unknown'}, 'PENDING', ${device_id})
+            VALUES (${collegeId}, ${name}, ${city || 'Unknown'}, 'VERIFIED', ${device_id})
         `;
 
         // 3. Update the user who suggested it to automatically "Join" this college
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             success: true,
             college_id: collegeId,
-            message: 'College suggested successfully! You have been joined to it.'
+            message: 'College created successfully! You have been joined to it.'
         });
 
     } catch (error: any) {

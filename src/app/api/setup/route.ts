@@ -114,6 +114,11 @@ export async function GET(req: NextRequest) {
             await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS public_id TEXT`;
             await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP`;
             await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS drop_active_at TIMESTAMP`;
+            await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS is_shadow BOOLEAN DEFAULT FALSE`;
+            await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS is_open BOOLEAN DEFAULT FALSE`;
+            await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS unlock_votes INTEGER DEFAULT 5`;
+            await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS poll_question TEXT`;
+            await sql`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS poll_options TEXT`;
         } catch (e) {
             console.log("Confessions migration error:", e);
         }
@@ -157,14 +162,40 @@ export async function GET(req: NextRequest) {
             );
         `;
 
-        // Migration: Ensure types match for foreign keys
+        // Migration: Ensure types match for foreign keys & add parent_id for threading
         try {
             console.log("Running migrations...");
             await sql`ALTER TABLE comments ALTER COLUMN confession_id TYPE TEXT`;
+            await sql`ALTER TABLE comments ADD COLUMN IF NOT EXISTS parent_id UUID`;
             await sql`ALTER TABLE comments ADD CONSTRAINT fk_confession FOREIGN KEY (confession_id) REFERENCES confessions(id) ON DELETE CASCADE`;
         } catch (e) {
             console.log("Migration (comments) already applied or minor error:", e);
         }
+
+        // 6. Reactions Table
+        await sql`
+            CREATE TABLE IF NOT EXISTS reactions (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                confession_id TEXT REFERENCES confessions(id) ON DELETE CASCADE,
+                device_id TEXT,
+                emoji TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(confession_id, device_id, emoji)
+            );
+        `;
+
+        // 7. Messages Table (Drop Chat)
+        await sql`
+            CREATE TABLE IF NOT EXISTS messages (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                confession_id TEXT REFERENCES confessions(id) ON DELETE CASCADE,
+                device_id TEXT,
+                handle TEXT,
+                avatar TEXT,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        `;
 
         return NextResponse.json({
             success: true,

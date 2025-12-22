@@ -71,6 +71,12 @@ export default function JoinPage() {
 
     useEffect(() => {
         const storedId = localStorage.getItem('device_id');
+        const suggestedClg = localStorage.getItem('suggested_college_id');
+
+        if (suggestedClg) {
+            setCollegeId(suggestedClg);
+        }
+
         if (storedId) {
             setDeviceId(storedId);
             checkAuth(storedId);
@@ -79,7 +85,7 @@ export default function JoinPage() {
             localStorage.setItem('device_id', newId);
             setDeviceId(newId);
         }
-    }, []);
+    }, [router]);
 
     const checkAuth = async (did: string) => {
         try {

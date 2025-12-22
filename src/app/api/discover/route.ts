@@ -7,6 +7,8 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const queryTerm = searchParams.get('q'); // Search query
+        const openDrops = searchParams.get('open'); // New: Fetch open drops
+        const deviceId = searchParams.get('device_id');
         const getTrending = searchParams.get('trending'); // If true, return tags
 
         if (getTrending === 'true') {
@@ -22,16 +24,58 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ tags: tagsRes.rows });
         }
 
+        if (openDrops === 'true') {
+            const postsRes = await sql`
+                SELECT 
+                    c.*,
+                    u.handle,
+                    u.avatar,
+                    (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
+                    COALESCE(v.value, 0) as myVote
+                FROM confessions c
+                LEFT JOIN users u ON u.device_id = c.device_id
+                LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
+                WHERE c.is_open = true 
+                  AND c.status = 'LIVE'
+                ORDER BY c.created_at DESC
+                LIMIT 50
+            `;
+            // Standardize return for FE
+            const results = postsRes.rows.map(row => ({
+                ...row,
+                myVote: parseInt(row.myvote || '0'),
+                upvotes: parseInt(row.upvotes || '0'),
+                downvotes: parseInt(row.downvotes || '0'),
+                comment_count: parseInt(row.comment_count || '0')
+            }));
+            return NextResponse.json({ results });
+        }
+
         if (queryTerm) {
             // Search Logic
             const postsRes = await sql`
-                SELECT * FROM confessions 
-                WHERE status = 'LIVE' 
-                AND (content ILIKE ${'%' + queryTerm + '%'} OR tag = ${queryTerm})
-                ORDER BY created_at DESC
+                SELECT 
+                    c.*,
+                    u.handle,
+                    u.avatar,
+                    (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
+                    COALESCE(v.value, 0) as myVote
+                FROM confessions c
+                LEFT JOIN users u ON u.device_id = c.device_id
+                LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
+                WHERE c.status = 'LIVE' 
+                AND (c.content ILIKE ${'%' + queryTerm + '%'} OR c.tag = ${queryTerm})
+                ORDER BY c.created_at DESC
                 LIMIT 50
             `;
-            return NextResponse.json({ results: postsRes.rows });
+            const results = postsRes.rows.map(row => ({
+                ...row,
+                myVote: parseInt(row.myvote || '0'),
+                upvotes: parseInt(row.upvotes || '0'),
+                downvotes: parseInt(row.downvotes || '0'),
+                comment_count: parseInt(row.comment_count || '0')
+            }));
+            return NextResponse.json({ results });
         }
 
         return NextResponse.json({ message: 'Provide ?q=search or ?trending=true' });

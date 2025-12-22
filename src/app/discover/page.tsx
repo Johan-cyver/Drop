@@ -7,7 +7,7 @@ import Widgets from '@/components/Widgets';
 import MobileDock from '@/components/MobileDock';
 import ConfessionCard, { Post } from '@/components/ConfessionCard';
 import ComposeModal from '@/components/ComposeModal';
-import { Search, Hash, TrendingUp } from 'lucide-react';
+import { Search, Hash, TrendingUp, Zap } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { showToast } from '@/components/NotificationToast';
 
@@ -18,6 +18,7 @@ function DiscoverContent() {
     const [query, setQuery] = useState(initialQuery);
     const [results, setResults] = useState<Post[]>([]);
     const [trendingTags, setTrendingTags] = useState<{ tag: string, count: number }[]>([]);
+    const [openDrops, setOpenDrops] = useState<Post[]>([]);
     const [loading, setLoading] = useState(false);
     const [isComposeOpen, setIsComposeOpen] = useState(false);
     const [deviceId, setDeviceId] = useState('');
@@ -26,6 +27,7 @@ function DiscoverContent() {
         const did = localStorage.getItem('device_id');
         if (did) setDeviceId(did);
         fetchTrending();
+        fetchOpenDrops(did || '');
         if (initialQuery) {
             handleSearch(initialQuery);
         }
@@ -41,11 +43,21 @@ function DiscoverContent() {
         }
     };
 
+    const fetchOpenDrops = async (did: string) => {
+        try {
+            const res = await fetch(`/api/discover?open=true&device_id=${did}`);
+            const data = await res.json();
+            if (data.results) setOpenDrops(data.results);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const handleSearch = async (term: string) => {
         if (!term.trim()) return;
         setLoading(true);
         try {
-            const res = await fetch(`/api/discover?q=${encodeURIComponent(term)}`);
+            const res = await fetch(`/api/discover?q=${encodeURIComponent(term)}&device_id=${deviceId}`);
             const data = await res.json();
             if (data.results) setResults(data.results);
         } catch (e) {
@@ -97,6 +109,25 @@ function DiscoverContent() {
 
                 <div className="p-4 lg:p-6 space-y-8">
 
+                    {/* Global Open Drops Section */}
+                    {results.length === 0 && !loading && openDrops.length > 0 && (
+                        <section>
+                            <div className="flex items-center gap-2 mb-4 text-brand-glow px-2">
+                                <Zap className="w-4 h-4 fill-current" />
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-white">Global Open Drops</h3>
+                            </div>
+                            <div className="space-y-4">
+                                {openDrops.map(post => (
+                                    <ConfessionCard
+                                        key={post.id}
+                                        post={post}
+                                        onVote={handleVote}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
                     {/* Trending Section (Only show if no search results yet) */}
                     {results.length === 0 && !loading && (
                         <section>
@@ -144,11 +175,11 @@ function DiscoverContent() {
             <ComposeModal
                 isOpen={isComposeOpen}
                 onClose={() => setIsComposeOpen(false)}
-                onSubmit={async (content, tag, image) => {
+                onSubmit={async (content, tag, image, options) => {
                     const res = await fetch('/api/confess', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ content, device_id: deviceId, image })
+                        body: JSON.stringify({ content, device_id: deviceId, image, ...options })
                     });
                     const data = await res.json();
                     if (res.ok) {

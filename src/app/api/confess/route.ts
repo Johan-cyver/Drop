@@ -6,7 +6,7 @@ import { calculateTemporalTimestamps } from '@/lib/utils';
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { content, device_id, image } = body;
+        const { content, device_id, image, is_shadow, is_open } = body;
 
         if (!content || !device_id) {
             return NextResponse.json({ error: 'Missing content or likely device_id' }, { status: 400 });
@@ -69,14 +69,18 @@ export async function POST(req: NextRequest) {
 
         // 5. Transactional Insert
         // A. Insert Post
+        const unlockVotes = is_shadow ? 5 : 0;
+
         await sql`
             INSERT INTO confessions(
                 id, content, college_id, device_id, status, tag, public_id,
-                expires_at, drop_active_at, created_at, image
+                expires_at, drop_active_at, created_at, image,
+                is_shadow, is_open, unlock_votes
             )
             VALUES(
                 ${id}, ${content}, ${user.college_id}, ${device_id}, ${status}, ${tag}, ${publicId},
-                ${expires_at}, ${drop_active_at}, ${now.toISOString()}, ${image || null}
+                ${expires_at}, ${drop_active_at}, ${now.toISOString()}, ${image || null},
+                ${is_shadow || false}, ${is_open || false}, ${unlockVotes}
             )
         `;
 

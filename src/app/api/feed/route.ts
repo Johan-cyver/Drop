@@ -30,6 +30,9 @@ export async function GET(req: NextRequest) {
                 u.handle,
                 u.avatar,
                 c.image,
+                c.is_shadow,
+                c.is_open,
+                c.unlock_votes,
                 (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count
             FROM confessions c
             LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
@@ -46,16 +49,42 @@ export async function GET(req: NextRequest) {
         // Also Postgres result objects have a .rows property.
         const rawPosts = rawPostsRes.rows.map(row => ({
             ...row,
-            myVote: parseInt(row.myvote || '0'), // PG returns bigint/numeric as string often
-            upvotes: row.upvotes || 0,
-            downvotes: row.downvotes || 0,
+            id: row.id,
+            myVote: parseInt(row.myvote || '0'),
+            upvotes: parseInt(row.upvotes || '0'),
+            downvotes: parseInt(row.downvotes || '0'),
             comment_count: parseInt(row.comment_count || '0'),
-            isDropActive: false // Placeholder, calculated below
+            is_shadow: !!row.is_shadow,
+            is_open: !!row.is_open,
+            unlock_votes: parseInt(row.unlock_votes || '0'),
+            isDropActive: false // Calculated below
+        }));
+
+        // 1.5 Fetch Reactions for these posts
+        const postIds = rawPosts.map(p => p.id);
+        let allReactions: any[] = [];
+        if (postIds.length > 0) {
+            // Vercel Postgres handles arrays as {1,2,3} format for ANY
+            const reactionsRes = await sql`
+                SELECT confession_id, emoji, COUNT(*) as count,
+                       EXISTS(SELECT 1 FROM reactions r2 WHERE r2.confession_id = r.confession_id AND r2.emoji = r.emoji AND r2.device_id = ${deviceId}) as active
+                FROM reactions r
+                WHERE confession_id = ANY(${postIds as any})
+                GROUP BY confession_id, emoji
+            `;
+            allReactions = reactionsRes.rows;
+        }
+
+        const rawPostsWithReactions = rawPosts.map(p => ({
+            ...p,
+            reactions: allReactions
+                .filter(r => r.confession_id === p.id)
+                .map(r => ({ emoji: r.emoji, count: parseInt(r.count), active: !!r.active }))
         }));
 
         // 2. Apply "The Hook" Algorithm
         // We need to cast types to match what rankFeed expects
-        const { feed, hot, new: newLane } = rankFeed(rawPosts as any);
+        const { feed, hot, new: newLane } = rankFeed(rawPostsWithReactions as any);
 
         // 3. Enrich with DROP_ACTIVE status
         const now = new Date();

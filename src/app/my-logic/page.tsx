@@ -220,11 +220,11 @@ export default function MyLogicPage() {
             <ComposeModal
                 isOpen={isComposeOpen}
                 onClose={() => setIsComposeOpen(false)}
-                onSubmit={async (content, tag, image) => {
+                onSubmit={async (content, tag, image, options) => {
                     const res = await fetch('/api/confess', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ content, device_id: deviceId, image })
+                        body: JSON.stringify({ content, device_id: deviceId, image, ...options })
                     });
                     const data = await res.json();
                     if (res.ok) {
