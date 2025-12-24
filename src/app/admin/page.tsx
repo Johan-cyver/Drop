@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, FileText, ShieldAlert, Ban, CheckCircle, Trash2, RefreshCw, Eye, EyeOff, Lock, ArrowRightLeft } from 'lucide-react';
+import { Users, FileText, ShieldAlert, Ban, CheckCircle, Trash2, RefreshCw, Eye, EyeOff, Lock, ArrowRightLeft, X } from 'lucide-react';
 
 export default function AdminPage() {
     const [users, setUsers] = useState<any[]>([]);
@@ -16,6 +16,9 @@ export default function AdminPage() {
     const [adminKey, setAdminKey] = useState<string | null>(null);
     const [tempKey, setTempKey] = useState('');
     const [authError, setAuthError] = useState(false);
+
+    // Move Power UI
+    const [movingUser, setMovingUser] = useState<any | null>(null);
 
     useEffect(() => {
         // Hydrate from localStorage
@@ -56,16 +59,11 @@ export default function AdminPage() {
         setTempKey('');
     };
 
-    const handleModerate = async (action: string, targetId: string) => {
-        if (!confirm('Are you sure?')) return;
+    const handleModerate = async (action: string, targetId: string, extraData: any = {}) => {
+        if (action !== 'MOVE_USER' && !confirm('Are you sure?')) return;
 
         try {
-            const body: any = { action, target_id: targetId };
-            if (action === 'MOVE_USER') {
-                const newId = prompt('Enter New College ID (e.g., dsu, dsce):');
-                if (!newId) return;
-                body.new_college_id = newId;
-            }
+            const body: any = { action, target_id: targetId, ...extraData };
 
             const res = await fetch('/api/admin/moderate', {
                 method: 'POST',
@@ -78,6 +76,7 @@ export default function AdminPage() {
 
             if (res.ok) {
                 setRefreshTrigger(prev => prev + 1);
+                setMovingUser(null);
             } else {
                 alert('Action failed. Check key.');
             }
@@ -116,11 +115,53 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white p-8 font-mono">
+        <div className="min-h-screen bg-black text-white p-8 font-mono relative">
+            {/* Move User Modal Overlay */}
+            {movingUser && (
+                <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6">
+                    <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+                            <div>
+                                <h3 className="text-lg font-bold">Move <span className="text-brand-glow">{movingUser.handle || 'User'}</span></h3>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Select target server</p>
+                            </div>
+                            <button onClick={() => setMovingUser(null)} className="p-2 hover:bg-white/10 rounded-xl transition">
+                                <X className="w-5 h-5 text-gray-400" />
+                            </button>
+                        </div>
+                        <div className="p-4 max-h-[400px] overflow-y-auto space-y-2 custom-scrollbar">
+                            {colleges.map(c => (
+                                <button
+                                    key={c.id}
+                                    onClick={() => handleModerate('MOVE_USER', movingUser.device_id, { new_college_id: c.id })}
+                                    className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between group
+                                        ${movingUser.college_id === c.id
+                                            ? 'bg-brand-glow/10 border-brand-glow text-brand-glow'
+                                            : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'}`}
+                                >
+                                    <div>
+                                        <div className="font-bold text-sm">{c.name}</div>
+                                        <div className="text-[10px] opacity-50 uppercase">{c.city}</div>
+                                    </div>
+                                    {movingUser.college_id === c.id ? (
+                                        <CheckCircle className="w-5 h-5" />
+                                    ) : (
+                                        <ArrowRightLeft className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="p-6 bg-white/5 text-center">
+                            <button onClick={() => setMovingUser(null)} className="text-xs text-gray-500 hover:text-white transition">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                 <div>
                     <h1 className="text-3xl font-bold text-brand-glow leading-none mb-2 text-glow">Admin Console</h1>
-                    <p className="text-xs text-gray-500">Authorized Session • v1.2.0</p>
+                    <p className="text-xs text-gray-500">Authorized Session • v1.3.0</p>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -214,7 +255,7 @@ export default function AdminPage() {
                                         <td className="p-3 text-right">
                                             <div className="flex items-center justify-end gap-1">
                                                 <button
-                                                    onClick={() => handleModerate('MOVE_USER', u.device_id)}
+                                                    onClick={() => setMovingUser(u)}
                                                     className="p-1.5 hover:bg-blue-500/20 text-blue-400 rounded-lg transition"
                                                     title="Move College"
                                                 >
