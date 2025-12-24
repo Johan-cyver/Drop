@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { query } from '@/lib/db';
 import { randomUUID } from 'crypto';
-import { calculateTemporalTimestamps } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
     try {
-        if (!process.env.POSTGRES_URL) {
-            return NextResponse.json({ error: 'Database not connected (POSTGRES_URL missing)' }, { status: 500 });
-        }
-
         const body = await req.json();
         const { content, device_id, image, is_shadow, is_open, unlock_threshold } = body;
 
@@ -20,32 +15,29 @@ export async function POST(req: NextRequest) {
 
         // 1. Data Prep for Timestamps
         const now = new Date();
-        // Fix: Use simple 24h expiry from constants.ts (DROP_LIFESPAN)
         const DROP_LIFESPAN = 24 * 60 * 60 * 1000; // 24 hours
-        // Start active immediately
         const expires_at = new Date(now.getTime() + DROP_LIFESPAN).toISOString();
-        const drop_active_at = now.toISOString(); // Active immediately upon creation
+        const drop_active_at = now.toISOString();
 
-        // 2. Rate Limit Check (Postgres)
-        const lastPostRes = await sql`
+        // 2. Rate Limit Check
+        const lastPostRes = await query(`
             SELECT created_at FROM confessions 
-            WHERE device_id = ${device_id} 
+            WHERE device_id = $1 
             ORDER BY created_at DESC 
             LIMIT 1
-        `;
+        `, [device_id]);
         const lastPost = lastPostRes.rows[0];
 
         if (lastPost) {
             const lastTime = new Date(lastPost.created_at).getTime();
             const diff = Date.now() - lastTime;
-            // Testing limit: 5 seconds.
             if (diff < 5 * 1000) {
                 return NextResponse.json({ error: 'You are doing that too much. Chill.' }, { status: 429 });
             }
         }
 
         // 3. User & College Check
-        const userRes = await sql`SELECT college_id, shadow_banned FROM users WHERE device_id = ${device_id}`;
+        const userRes = await query(`SELECT college_id, shadow_banned FROM users WHERE device_id = $1`, [device_id]);
         const user = userRes.rows[0];
 
         if (!user || !user.college_id) {
@@ -78,32 +70,28 @@ export async function POST(req: NextRequest) {
         const publicId = `Drop-${randomUUID().slice(0, 5)}`;
 
         // 5. Transactional Insert
-        // A. Insert Post
-        // Use user provided threshold or default to 5
         const finalThreshold = is_shadow ? (unlock_threshold || 5) : 0;
 
-        await sql`
+        await query(`
             INSERT INTO confessions(
                 id, content, college_id, device_id, status, tag, public_id,
                 expires_at, drop_active_at, created_at, image,
                 is_shadow, is_open, unlock_votes, unlock_threshold
             )
             VALUES(
-                ${id}, ${content}, ${user.college_id}, ${device_id}, ${status}, ${tag}, ${publicId},
-                ${expires_at}, ${drop_active_at}, ${now.toISOString()}, ${image || null},
-                ${is_shadow || false}, ${is_open || false}, 0, ${finalThreshold}
+                $1, $2, $3, $4, $5, $6, $7,
+                $8, $9, $10, $11,
+                $12, $13, 0, $14
             )
-        `;
+        `, [
+            id, content, user.college_id, device_id, status, tag, publicId,
+            expires_at, drop_active_at, now.toISOString(), image || null,
+            is_shadow || false, is_open || false, finalThreshold
+        ]);
 
-        // B. Update User Last Post
-        await sql`
-            UPDATE users SET last_post_at = ${now.toISOString()} WHERE device_id = ${device_id}
-        `;
-
-        // C. Update Karma (Coins) - Reward for posting
-        await sql`
-            UPDATE users SET coins = coins + 10 WHERE device_id = ${device_id}
-        `;
+        // 6. Update User Stats
+        await query(`UPDATE users SET last_post_at = $1 WHERE device_id = $2`, [now.toISOString(), device_id]);
+        await query(`UPDATE users SET coins = coins + 10 WHERE device_id = $1`, [device_id]);
 
         if (status === 'FLAGGED') {
             return NextResponse.json({

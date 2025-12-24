@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { query } from '@/lib/db';
 import { rankFeed } from '@/lib/algorithm';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
         if (!targetCollegeId && deviceId) {
             // Get User's Default College if no filter is provided
-            const userRes = await sql`SELECT college_id FROM users WHERE device_id = ${deviceId}`;
+            const userRes = await query(`SELECT college_id FROM users WHERE device_id = $1`, [deviceId]);
             targetCollegeId = userRes.rows[0]?.college_id;
         }
 
@@ -28,8 +28,7 @@ export async function GET(req: NextRequest) {
         }
 
         // 1. Fetch RAW "LIVE" confessions with My Vote
-        // Postgres uses NOW() instead of datetime('now')
-        const rawPostsRes = await sql`
+        const rawPostsRes = await query(`
             SELECT 
                 c.*, 
                 COALESCE(v.value, 0) as myVote,
@@ -42,19 +41,16 @@ export async function GET(req: NextRequest) {
                 c.unlock_threshold,
                 (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count
             FROM confessions c
-            LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
+            LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = $1
             LEFT JOIN users u ON u.device_id = c.device_id
             WHERE c.status = 'LIVE' 
-                AND c.college_id = ${targetCollegeId}
+                AND c.college_id = $2
                 AND c.is_open = false -- STRICT SEPARATION: Only anonymous/closed drops
                 AND (c.expires_at IS NULL OR c.expires_at > NOW())
             ORDER BY c.created_at DESC
             LIMIT 200
-        `;
+        `, [deviceId || '', targetCollegeId]);
 
-        // Note: rows returned by 'pg' are objects with lowercase keys by default. 
-        // We might need to camelCase them if we used raw SQL, but usually they match column names.
-        // Also Postgres result objects have a .rows property.
         const rawPosts = rawPostsRes.rows.map(row => ({
             ...row,
             id: row.id,
@@ -73,14 +69,13 @@ export async function GET(req: NextRequest) {
         const postIds = rawPosts.map(p => p.id);
         let allReactions: any[] = [];
         if (postIds.length > 0) {
-            // Vercel Postgres handles arrays as {1,2,3} format for ANY
-            const reactionsRes = await sql`
+            const reactionsRes = await query(`
                 SELECT confession_id, emoji, COUNT(*) as count,
-                       EXISTS(SELECT 1 FROM reactions r2 WHERE r2.confession_id = r.confession_id AND r2.emoji = r.emoji AND r2.device_id = ${deviceId}) as active
+                       EXISTS(SELECT 1 FROM reactions r2 WHERE r2.confession_id = r.confession_id AND r2.emoji = r.emoji AND r2.device_id = $1) as active
                 FROM reactions r
-                WHERE confession_id = ANY(${postIds as any})
+                WHERE confession_id = ANY($2)
                 GROUP BY confession_id, emoji
-            `;
+            `, [deviceId, postIds]);
             allReactions = reactionsRes.rows;
         }
 
