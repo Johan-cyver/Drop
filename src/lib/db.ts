@@ -3,7 +3,22 @@ import { sql } from '@vercel/postgres';
 // Vercel Postgres is serverless and async by default.
 // We export the query helper to use in our routes.
 
+// Helper for database connection string
+const getPostgresUrl = () => {
+    return process.env.POSTGRES_URL ||
+        process.env.DATABASE_URL ||
+        process.env.POSTGRES_URL_NON_POOLING ||
+        process.env.NEON_DATABASE_URL;
+};
+
 export async function query(text: string, params: any[] = []) {
+    // Check if we have any valid connection string
+    const url = getPostgresUrl();
+
+    if (!url) {
+        throw new Error('DATABASE_NOT_CONNECTED');
+    }
+
     try {
         return await sql.query(text, params);
     } catch (error) {
