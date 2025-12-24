@@ -1,4 +1,5 @@
 import { ArrowBigUp, ArrowBigDown, Send, Clock, Bookmark, Share2, Sparkles, MessageCircle, Zap } from 'lucide-react';
+import { showToast } from '@/components/NotificationToast';
 import { cn, formatNumber, formatTime, formatCountdown, getTimeRemaining } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
