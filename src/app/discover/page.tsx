@@ -7,7 +7,7 @@ import Widgets from '@/components/Widgets';
 import MobileDock from '@/components/MobileDock';
 import ConfessionCard, { Post } from '@/components/ConfessionCard';
 import ComposeModal from '@/components/ComposeModal';
-import { Search, Hash, TrendingUp, Zap } from 'lucide-react';
+import { Search, Hash, TrendingUp, Zap, Ghost } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { showToast } from '@/components/NotificationToast';
 
@@ -18,24 +18,26 @@ function DiscoverContent() {
     const [query, setQuery] = useState(initialQuery);
     const [results, setResults] = useState<Post[]>([]);
     const [trendingTags, setTrendingTags] = useState<{ tag: string, count: number }[]>([]);
-    const [openDrops, setOpenDrops] = useState<Post[]>([]);
+    const [trending, setTrending] = useState<{ open: Post[], anonymous: Post[] }>({ open: [], anonymous: [] });
     const [loading, setLoading] = useState(false);
     const [isComposeOpen, setIsComposeOpen] = useState(false);
     const [deviceId, setDeviceId] = useState('');
 
     useEffect(() => {
         const did = localStorage.getItem('device_id');
-        if (did) setDeviceId(did);
-        fetchTrending();
-        fetchOpenDrops(did || '');
+        if (did) {
+            setDeviceId(did);
+            fetchTrending(did);
+        }
+        fetchTags();
         if (initialQuery) {
             handleSearch(initialQuery);
         }
     }, []);
 
-    const fetchTrending = async () => {
+    const fetchTags = async () => {
         try {
-            const res = await fetch('/api/discover?trending=true');
+            const res = await fetch('/api/discover?mode=tags');
             const data = await res.json();
             if (data.tags) setTrendingTags(data.tags);
         } catch (e) {
@@ -43,11 +45,11 @@ function DiscoverContent() {
         }
     };
 
-    const fetchOpenDrops = async (did: string) => {
+    const fetchTrending = async (did: string) => {
         try {
             const res = await fetch(`/api/discover?mode=trending&device_id=${did}`);
             const data = await res.json();
-            if (data.results) setOpenDrops(data.results);
+            if (data.trending) setTrending(data.trending);
         } catch (e) {
             console.error(e);
         }
@@ -68,15 +70,33 @@ function DiscoverContent() {
     };
 
     const handleVote = async (id: string, val: number) => {
-        const updated = results.map(p => {
+        // Update results
+        setResults(prev => prev.map(p => {
             if (p.id !== id) return p;
             const currentVote = p.myVote || 0;
             let newVote = currentVote === val ? 0 : val;
             let voteDiff = newVote - currentVote;
-            return { ...p, upvotes: p.upvotes + voteDiff, myVote: newVote };
-        });
-        setResults(updated);
-        // Fire API
+            return { ...p, upvotes: Math.max(0, p.upvotes + voteDiff), myVote: newVote };
+        }));
+
+        // Update trending
+        setTrending(prev => ({
+            open: prev.open.map(p => {
+                if (p.id !== id) return p;
+                const currentVote = p.myVote || 0;
+                let newVote = currentVote === val ? 0 : val;
+                let voteDiff = newVote - currentVote;
+                return { ...p, upvotes: Math.max(0, p.upvotes + voteDiff), myVote: newVote };
+            }),
+            anonymous: prev.anonymous.map(p => {
+                if (p.id !== id) return p;
+                const currentVote = p.myVote || 0;
+                let newVote = currentVote === val ? 0 : val;
+                let voteDiff = newVote - currentVote;
+                return { ...p, upvotes: Math.max(0, p.upvotes + voteDiff), myVote: newVote };
+            })
+        }));
+
         await fetch('/api/vote', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -91,7 +111,6 @@ function DiscoverContent() {
 
             <main className="flex-1 lg:col-span-6 w-full max-w-[480px] lg:max-w-none mx-auto flex flex-col h-full bg-dark-950/50 lg:bg-transparent lg:border-x lg:border-white/5 relative shadow-2xl lg:shadow-none min-h-screen">
 
-                {/* Search Header */}
                 <div className="p-6 sticky top-0 z-20 bg-dark-950/80 backdrop-blur-md border-b border-white/5">
                     <h2 className="text-xl font-bold uppercase tracking-widest mb-4">Discover</h2>
                     <div className="relative group">
@@ -109,26 +128,37 @@ function DiscoverContent() {
 
                 <div className="p-4 lg:p-6 space-y-8">
 
-                    {/* College Confessions Section */}
-                    {results.length === 0 && !loading && openDrops.length > 0 && (
+                    {/* Trending Open Drops Block */}
+                    {results.length === 0 && !loading && trending.open.length > 0 && (
                         <section>
                             <div className="flex items-center gap-2 mb-4 text-brand-glow px-2">
                                 <Zap className="w-4 h-4 fill-current" />
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-white">Trending at your College</h3>
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-white">Hot Now (Open Drops)</h3>
                             </div>
                             <div className="space-y-4">
-                                {openDrops.map(post => (
-                                    <ConfessionCard
-                                        key={post.id}
-                                        post={post}
-                                        onVote={handleVote}
-                                    />
+                                {trending.open.map(post => (
+                                    <ConfessionCard key={post.id} post={post} onVote={handleVote} />
                                 ))}
                             </div>
                         </section>
                     )}
 
-                    {/* Trending Section (Only show if no search results yet) */}
+                    {/* Trending Anonymous Drops Block */}
+                    {results.length === 0 && !loading && trending.anonymous.length > 0 && (
+                        <section>
+                            <div className="flex items-center gap-2 mb-4 text-brand-indigo px-2">
+                                <Ghost className="w-4 h-4" />
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-white">Top Gossip (Anonymous)</h3>
+                            </div>
+                            <div className="space-y-4">
+                                {trending.anonymous.map(post => (
+                                    <ConfessionCard key={post.id} post={post} onVote={handleVote} />
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* Trending Tags */}
                     {results.length === 0 && !loading && (
                         <section>
                             <div className="flex items-center gap-2 mb-4 text-brand-glow px-2">
@@ -147,7 +177,7 @@ function DiscoverContent() {
                                         <span className="bg-black/20 px-1.5 rounded text-[10px] text-gray-500">{t.count}</span>
                                     </button>
                                 )) : (
-                                    <p className="text-gray-500 text-sm italic px-2">No trends yet. Be the first.</p>
+                                    <p className="text-gray-500 text-sm italic px-2">No trends yet.</p>
                                 )}
                             </div>
                         </section>
@@ -156,13 +186,9 @@ function DiscoverContent() {
                     {/* Results Feed */}
                     <section className="space-y-4">
                         {loading && <div className="text-center text-brand-glow animate-pulse">Searching...</div>}
-
                         {results.length > 0 && (
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 px-2">
-                                Results
-                            </h3>
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 px-2">Results</h3>
                         )}
-
                         {results.map(post => (
                             <ConfessionCard key={post.id} post={post} onVote={handleVote} hideIdentity={true} />
                         ))}

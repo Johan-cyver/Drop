@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,26 +13,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        if (!process.env.POSTGRES_URL) {
-            return NextResponse.json({ error: 'Database not connected' }, { status: 500 });
-        }
-
         // Migrate existing users to DSU
-        // Only update users who don't have a college or have 'unknown' as college
-        const result = await sql`
+        // Update users who don't have a college, have 'unknown' or 'eee' as college
+        const result = await query(`
             UPDATE users 
             SET college_id = 'dsu' 
             WHERE college_id IS NULL 
                OR college_id = '' 
-               OR college_id = 'unknown'
+               OR LOWER(college_id) = 'unknown'
+               OR LOWER(college_id) = 'eee'
             RETURNING device_id, handle
-        `;
+        `);
 
         return NextResponse.json({
             success: true,
-            migrated_count: result.rowCount,
+            migrated_count: result.rows.length,
             migrated_users: result.rows,
-            message: `Successfully migrated ${result.rowCount} users to Dayananda Sagar University`
+            message: `Successfully migrated ${result.rows.length} users to Dayananda Sagar University (dsu)`
         });
 
     } catch (error: any) {
