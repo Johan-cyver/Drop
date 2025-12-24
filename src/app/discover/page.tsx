@@ -45,7 +45,7 @@ function DiscoverContent() {
 
     const fetchOpenDrops = async (did: string) => {
         try {
-            const res = await fetch(`/api/discover?open=true&device_id=${did}`);
+            const res = await fetch(`/api/discover?mode=trending&device_id=${did}`);
             const data = await res.json();
             if (data.results) setOpenDrops(data.results);
         } catch (e) {
@@ -114,7 +114,7 @@ function DiscoverContent() {
                         <section>
                             <div className="flex items-center gap-2 mb-4 text-brand-glow px-2">
                                 <Zap className="w-4 h-4 fill-current" />
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-white">Your College Feed</h3>
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-white">Trending at your College</h3>
                             </div>
                             <div className="space-y-4">
                                 {openDrops.map(post => (

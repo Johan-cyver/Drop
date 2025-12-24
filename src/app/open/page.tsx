@@ -32,7 +32,7 @@ export default function OpenDropsPage() {
     const fetchOpenDrops = async (did: string) => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/discover?open=true&device_id=${did}`);
+            const res = await fetch(`/api/discover?mode=open_drops&device_id=${did}`);
             const data = await res.json();
             if (data.results) {
                 setPosts(data.results);

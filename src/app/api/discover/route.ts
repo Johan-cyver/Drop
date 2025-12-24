@@ -28,7 +28,9 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ tags: tagsRes.rows });
         }
 
-        if (openDrops === 'true') {
+        const mode = searchParams.get('mode'); // 'trending' or 'open_drops'
+
+        if (mode === 'trending' || mode === 'open_drops') {
             // First, get the user's college
             const userRes = await sql`
                 SELECT college_id FROM users WHERE device_id = ${deviceId || ''}
@@ -39,27 +41,58 @@ export async function GET(req: NextRequest) {
                 return NextResponse.json({ results: [] });
             }
 
-            const postsRes = await sql`
-                SELECT 
-                    c.*,
-                    u.handle,
-                    u.avatar,
-                    (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
-                    (SELECT COUNT(*) FROM messages WHERE confession_id = c.id) as message_count,
-                    (SELECT COUNT(*) FROM reactions WHERE confession_id = c.id) as reaction_count,
-                    COALESCE(v.value, 0) as myVote,
-                    (
-                        COALESCE((SELECT COUNT(*) FROM reactions WHERE confession_id = c.id), 0) * 1 +
-                        COALESCE((SELECT COUNT(*) FROM messages WHERE confession_id = c.id), 0) * 2
-                    ) as activity_score
-                FROM confessions c
-                LEFT JOIN users u ON u.device_id = c.device_id
-                LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
-                WHERE c.status = 'LIVE'
-                  AND c.college_id = ${userCollege}
-                ORDER BY activity_score DESC, c.created_at DESC
-                LIMIT 50
-            `;
+            let postsRes;
+
+            if (mode === 'open_drops') {
+                // Strict Open Drops: Active, Open, Time-limited
+                postsRes = await sql`
+                    SELECT 
+                        c.*,
+                        u.handle,
+                        u.avatar,
+                        (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
+                        (SELECT COUNT(*) FROM messages WHERE confession_id = c.id) as message_count,
+                        (SELECT COUNT(*) FROM reactions WHERE confession_id = c.id) as reaction_count,
+                        COALESCE(v.value, 0) as myVote,
+                        (
+                            COALESCE((SELECT COUNT(*) FROM reactions WHERE confession_id = c.id), 0) * 1 +
+                            COALESCE((SELECT COUNT(*) FROM messages WHERE confession_id = c.id), 0) * 2
+                        ) as activity_score
+                    FROM confessions c
+                    LEFT JOIN users u ON u.device_id = c.device_id
+                    LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
+                    WHERE c.status = 'LIVE'
+                      AND c.college_id = ${userCollege}
+                      AND c.is_open = true
+                      AND (c.expires_at IS NULL OR c.expires_at > NOW())
+                    ORDER BY c.created_at DESC
+                    LIMIT 50
+                `;
+            } else {
+                // Trending: Hottest (Open + Closed) using Activity Score
+                postsRes = await sql`
+                    SELECT 
+                        c.*,
+                        u.handle,
+                        u.avatar,
+                        (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
+                        (SELECT COUNT(*) FROM messages WHERE confession_id = c.id) as message_count,
+                        (SELECT COUNT(*) FROM reactions WHERE confession_id = c.id) as reaction_count,
+                        COALESCE(v.value, 0) as myVote,
+                        (
+                            COALESCE((SELECT COUNT(*) FROM reactions WHERE confession_id = c.id), 0) * 1 +
+                            COALESCE((SELECT COUNT(*) FROM messages WHERE confession_id = c.id), 0) * 2
+                        ) as activity_score
+                    FROM confessions c
+                    LEFT JOIN users u ON u.device_id = c.device_id
+                    LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
+                    WHERE c.status = 'LIVE'
+                      AND c.college_id = ${userCollege}
+                    ORDER BY activity_score DESC, c.created_at DESC
+                    LIMIT 50
+                `;
+            }
+
             // Standardize return for FE
             const results = postsRes.rows.map(row => ({
                 ...row,
