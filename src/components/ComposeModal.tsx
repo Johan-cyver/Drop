@@ -9,7 +9,7 @@ import HelplineModal from './HelplineModal';
 interface ComposeModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (content: string, tag: string, image?: string, options?: { is_shadow?: boolean, is_open?: boolean }) => Promise<{ success: boolean; safety_warning?: boolean; error?: string } | void>;
+    onSubmit: (content: string, tag: string, image?: string, options?: { is_shadow?: boolean, is_open?: boolean, unlock_threshold?: number }) => Promise<{ success: boolean; safety_warning?: boolean; error?: string } | void>;
     deviceId: string;
 }
 
@@ -23,6 +23,7 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
     // New Features State
     const [isShadow, setIsShadow] = useState(false);
     const [isOpenStatus, setIsOpenStatus] = useState(false);
+    const [unlockThreshold, setUnlockThreshold] = useState(5);
 
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);

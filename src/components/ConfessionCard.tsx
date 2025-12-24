@@ -25,6 +25,7 @@ export interface Post {
     is_shadow?: boolean;
     is_open?: boolean;
     unlock_votes?: number;
+    unlock_threshold?: number;
     comment_count?: number;
     image?: string; // Data URI for camera photo
     color?: string; // Custom card color for sharing

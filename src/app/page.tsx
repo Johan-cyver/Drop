@@ -132,7 +132,7 @@ export default function Home() {
         }
     };
 
-    const handleSubmit = async (content: string, tag: string, image?: string, options?: { is_shadow?: boolean, is_open?: boolean }) => {
+    const handleSubmit = async (content: string, tag: string, image?: string, options?: { is_shadow?: boolean, is_open?: boolean, unlock_threshold?: number }) => {
         try {
             const res = await fetch('/api/confess', {
                 method: 'POST',
@@ -142,7 +142,8 @@ export default function Home() {
                     device_id: deviceId,
                     image,
                     is_shadow: options?.is_shadow,
-                    is_open: options?.is_open
+                    is_open: options?.is_open,
+                    unlock_threshold: options?.unlock_threshold
                 })
             });
 
