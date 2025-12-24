@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, FileText, ShieldAlert, Ban, CheckCircle, Trash2, RefreshCw, Eye, EyeOff, Lock } from 'lucide-react';
+import { Users, FileText, ShieldAlert, Ban, CheckCircle, Trash2, RefreshCw, Eye, EyeOff, Lock, ArrowRightLeft } from 'lucide-react';
 
 export default function AdminPage() {
     const [users, setUsers] = useState<any[]>([]);
@@ -60,13 +60,20 @@ export default function AdminPage() {
         if (!confirm('Are you sure?')) return;
 
         try {
+            const body: any = { action, target_id: targetId };
+            if (action === 'MOVE_USER') {
+                const newId = prompt('Enter New College ID (e.g., dsu, dsce):');
+                if (!newId) return;
+                body.new_college_id = newId;
+            }
+
             const res = await fetch('/api/admin/moderate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-admin-secret': adminKey || ''
                 },
-                body: JSON.stringify({ action, target_id: targetId })
+                body: JSON.stringify(body)
             });
 
             if (res.ok) {
@@ -205,23 +212,32 @@ export default function AdminPage() {
                                             }
                                         </td>
                                         <td className="p-3 text-right">
-                                            {u.shadow_banned ? (
+                                            <div className="flex items-center justify-end gap-1">
                                                 <button
-                                                    onClick={() => handleModerate('UNBAN_USER', u.device_id)}
-                                                    className="p-1.5 hover:bg-green-500/20 text-green-400 rounded-lg transition"
-                                                    title="Unban User"
+                                                    onClick={() => handleModerate('MOVE_USER', u.device_id)}
+                                                    className="p-1.5 hover:bg-blue-500/20 text-blue-400 rounded-lg transition"
+                                                    title="Move College"
                                                 >
-                                                    <CheckCircle className="w-4 h-4" />
+                                                    <ArrowRightLeft className="w-4 h-4" />
                                                 </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleModerate('BAN_USER', u.device_id)}
-                                                    className="p-1.5 hover:bg-red-500/20 text-red-400 rounded-lg transition"
-                                                    title="Shadow Ban User"
-                                                >
-                                                    <Ban className="w-4 h-4" />
-                                                </button>
-                                            )}
+                                                {u.shadow_banned ? (
+                                                    <button
+                                                        onClick={() => handleModerate('UNBAN_USER', u.device_id)}
+                                                        className="p-1.5 hover:bg-green-500/20 text-green-400 rounded-lg transition"
+                                                        title="Unban User"
+                                                    >
+                                                        <CheckCircle className="w-4 h-4" />
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleModerate('BAN_USER', u.device_id)}
+                                                        className="p-1.5 hover:bg-red-500/20 text-red-400 rounded-lg transition"
+                                                        title="Shadow Ban User"
+                                                    >
+                                                        <Ban className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
