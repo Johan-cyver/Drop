@@ -18,8 +18,6 @@ export default function Home() {
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [deviceId, setDeviceId] = useState('');
     const [hotCount, setHotCount] = useState(0);
-    const [colleges, setColleges] = useState<any[]>([]);
-    const [selectedCollegeId, setSelectedCollegeId] = useState<string | null>(null);
     const [userCollegeId, setUserCollegeId] = useState<string | null>(null);
 
     const router = useRouter();
@@ -38,9 +36,7 @@ export default function Home() {
         checkAuth(did).then(user => {
             if (user && user.college_id) {
                 setUserCollegeId(user.college_id);
-                setSelectedCollegeId(user.college_id);
                 fetchFeed(did, user.college_id);
-                fetchColleges();
             } else {
                 router.push('/join');
             }
@@ -51,7 +47,7 @@ export default function Home() {
             if (did) {
                 // Check Ban Status + Fetch Feed
                 checkAuth(did).then(good => {
-                    if (good) fetchFeed(did, selectedCollegeId || undefined);
+                    if (good) fetchFeed(did, userCollegeId || undefined);
                     else router.push('/join');
                 });
             }
@@ -59,7 +55,7 @@ export default function Home() {
 
         // Fetch on focus
         const handleFocus = () => {
-            if (did) fetchFeed(did, selectedCollegeId || undefined);
+            if (did) fetchFeed(did, userCollegeId || undefined);
         };
         window.addEventListener('focus', handleFocus);
 
@@ -69,17 +65,7 @@ export default function Home() {
         };
     }, []);
 
-    const fetchColleges = async () => {
-        try {
-            const res = await fetch('/api/colleges');
-            const data = await res.json();
-            if (data.colleges) {
-                setColleges(data.colleges);
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    };
+    // College fetch removed for marketing restriction
 
     const checkAuth = async (did: string) => {
         try {
@@ -117,10 +103,7 @@ export default function Home() {
         }
     };
 
-    const handleCollegeChange = (id: string) => {
-        setSelectedCollegeId(id);
-        fetchFeed(deviceId, id);
-    };
+    // College switching removed
 
     const handleVote = async (id: string, val: number) => {
         // 1. Optimistic UI Update
@@ -192,9 +175,6 @@ export default function Home() {
             <Feed
                 posts={posts}
                 onVote={handleVote}
-                colleges={colleges}
-                selectedCollegeId={selectedCollegeId}
-                onCollegeChange={handleCollegeChange}
                 userCollegeId={userCollegeId}
             />
 

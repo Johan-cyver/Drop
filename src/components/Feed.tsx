@@ -60,24 +60,6 @@ export default function Feed({
                         <Timer className="w-3.5 h-3.5 text-gray-400" />
                     </div>
                 </div>
-
-                {/* Mobile College Selector */}
-                {colleges.length > 0 && (
-                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-2 px-2 mask-linear-r">
-                        {colleges.map((c) => (
-                            <button
-                                key={c.id}
-                                onClick={() => onCollegeChange?.(c.id)}
-                                className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 border ${selectedCollegeId === c.id
-                                    ? 'bg-brand-glow/20 border-brand-glow text-white shadow-[0_0_15px_rgba(139,92,246,0.2)]'
-                                    : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-                                    }`}
-                            >
-                                {c.name} {c.id === userCollegeId && '🏠'}
-                            </button>
-                        ))}
-                    </div>
-                )}
             </header>
 
             {/* Scrollable Area */}
@@ -103,23 +85,6 @@ export default function Feed({
                         </div>
                     </div>
 
-                    {/* Desktop College Selector */}
-                    {colleges.length > 0 && (
-                        <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar relative z-50">
-                            {colleges.map((c) => (
-                                <button
-                                    key={c.id}
-                                    onClick={() => onCollegeChange?.(c.id)}
-                                    className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 border ${selectedCollegeId === c.id
-                                        ? 'bg-brand-glow/20 border-brand-glow text-white shadow-[0_0_15px_rgba(139,92,246,0.2)]'
-                                        : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-                                        }`}
-                                >
-                                    {c.name} {c.id === userCollegeId && '🏠'}
-                                </button>
-                            ))}
-                        </div>
-                    )}
                 </div>
 
                 {/* Mobile Filter Tabs */}
