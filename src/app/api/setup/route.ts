@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
             console.log("Seeding colleges...");
             // We use a simplified seed for the setup route
             const defaultColleges = [
+                ['dsu', 'Dayananda Sagar University', 'Bengaluru'],
                 ['rvce', 'RV College of Engineering', 'Bengaluru'],
                 ['bmsce', 'BMS College of Engineering', 'Bengaluru'],
                 ['pes-rr', 'PES University (RR Campus)', 'Bengaluru'],
@@ -201,6 +202,13 @@ export async function GET(req: NextRequest) {
                 created_at TIMESTAMP DEFAULT NOW()
             );
         `;
+
+        // Messages Migrations
+        try {
+            await sql`ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to_id UUID REFERENCES messages(id) ON DELETE SET NULL`;
+        } catch (e) {
+            console.log("Messages migration error:", e);
+        }
 
         return NextResponse.json({
             success: true,

@@ -12,6 +12,9 @@ interface Message {
     content: string;
     created_at: string;
     device_id: string;
+    reply_to_id?: string;
+    reply_to_handle?: string;
+    reply_to_content?: string;
 }
 
 interface DropChatProps {
@@ -26,6 +29,8 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(true);
+    const [onlineCount, setOnlineCount] = useState(0);
+    const [replyTo, setReplyTo] = useState<Message | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const fetchMessages = async () => {
@@ -42,9 +47,25 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
         }
     };
 
+    const fetchOnlineCount = async () => {
+        try {
+            const res = await fetch(`/api/chat/${confessionId}/online?device_id=${deviceId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setOnlineCount(data.onlineCount || 0);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     useEffect(() => {
         fetchMessages();
-        const interval = setInterval(fetchMessages, 3000); // Poll every 3 seconds
+        fetchOnlineCount();
+        const interval = setInterval(() => {
+            fetchMessages();
+            fetchOnlineCount();
+        }, 3000); // Poll every 3 seconds
         return () => clearInterval(interval);
     }, [confessionId]);
 
@@ -60,6 +81,8 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
 
         const content = input.trim();
         setInput('');
+        const replyToId = replyTo?.id;
+        setReplyTo(null);
 
         try {
             await fetch(`/api/chat/${confessionId}`, {
@@ -69,7 +92,8 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
                     device_id: deviceId,
                     handle: userHandle,
                     avatar: userAvatar,
-                    content
+                    content,
+                    reply_to_id: replyToId
                 })
             });
             fetchMessages();
@@ -89,7 +113,15 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
             <div className="p-6 border-b border-white/5 flex items-center justify-between">
                 <div>
                     <h3 className="text-xl font-black uppercase tracking-widest text-white">Tea Lounge</h3>
-                    <p className="text-[10px] font-bold text-brand-glow uppercase tracking-widest">Live Ephemeral Chat</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-[10px] font-bold text-brand-glow uppercase tracking-widest">Live Ephemeral Chat</p>
+                        {onlineCount > 0 && (
+                            <span className="flex items-center gap-1 text-[9px] font-extrabold text-green-400">
+                                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                                {onlineCount} online
+                            </span>
+                        )}
+                    </div>
                 </div>
                 <button onClick={onClose} className="p-2 rounded-2xl bg-white/5 text-gray-400 hover:text-white transition">
                     <X className="w-6 h-6" />
@@ -117,23 +149,41 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
                             : `https://api.dicebear.com/7.x/bottts/svg?seed=${msg.handle || msg.id}`;
 
                         return (
-                            <div key={msg.id} className={cn("flex gap-3", isMe ? "flex-row-reverse" : "flex-row")}>
-                                <div className="w-8 h-8 rounded-xl bg-white/5 overflow-hidden flex-shrink-0 border border-white/10">
-                                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                                </div>
-                                <div className={cn(
-                                    "max-w-[80%] p-3 rounded-2xl text-sm",
-                                    isMe
-                                        ? "bg-brand-glow text-white rounded-tr-none"
-                                        : "bg-white/5 text-gray-200 border border-white/5 rounded-tl-none"
-                                )}>
-                                    <p className={cn(
-                                        "text-[9px] font-extrabold uppercase tracking-widest mb-1",
-                                        isMe ? "text-white/60 text-right" : "text-brand-glow"
-                                    )}>
-                                        {msg.handle || 'Anonymous Member'}
-                                    </p>
-                                    <p className="leading-relaxed">{msg.content}</p>
+                            <div key={msg.id} className="space-y-1">
+                                {/* Reply indicator */}
+                                {msg.reply_to_id && msg.reply_to_handle && (
+                                    <div className={cn("text-[9px] text-gray-600 italic px-2", isMe ? "text-right" : "text-left")}>
+                                        Replying to {msg.reply_to_handle}: "{msg.reply_to_content?.substring(0, 30)}{(msg.reply_to_content?.length || 0) > 30 ? '...' : ''}"
+                                    </div>
+                                )}
+                                <div className={cn("flex gap-3", isMe ? "flex-row-reverse" : "flex-row")}>
+                                    <div className="w-8 h-8 rounded-xl bg-white/5 overflow-hidden flex-shrink-0 border border-white/10">
+                                        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex flex-col gap-1 max-w-[75%]">
+                                        <div className={cn(
+                                            "p-3 rounded-2xl text-sm",
+                                            isMe
+                                                ? "bg-brand-glow text-white rounded-tr-none"
+                                                : "bg-white/5 text-gray-200 border border-white/5 rounded-tl-none"
+                                        )}>
+                                            <p className={cn(
+                                                "text-[9px] font-extrabold uppercase tracking-widest mb-1",
+                                                isMe ? "text-white/60 text-right" : "text-brand-glow"
+                                            )}>
+                                                {msg.handle || 'Anonymous Member'}
+                                            </p>
+                                            <p className="leading-relaxed">{msg.content}</p>
+                                        </div>
+                                        {!isMe && (
+                                            <button
+                                                onClick={() => setReplyTo(msg)}
+                                                className="text-[9px] font-black uppercase tracking-widest text-gray-600 hover:text-brand-glow transition px-2"
+                                            >
+                                                Reply
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -143,6 +193,16 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
 
             {/* Input */}
             <form onSubmit={handleSend} className="p-6 bg-black/40 border-t border-white/5">
+                {replyTo && (
+                    <div className="mb-3 flex items-center justify-between px-4 py-2 bg-brand-glow/10 border border-brand-glow/20 rounded-xl">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-brand-glow">
+                            Replying to {replyTo.handle || 'Anonymous'}
+                        </span>
+                        <button type="button" onClick={() => setReplyTo(null)} className="text-brand-glow hover:text-white">
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
                 <div className="relative group">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-brand-glow to-indigo-500 rounded-2xl blur opacity-20 group-focus-within:opacity-100 transition duration-500" />
                     <div className="relative bg-dark-900 rounded-2xl p-2 flex items-center gap-2 border border-white/10">
@@ -150,7 +210,7 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="Roast the logic..."
+                            placeholder={replyTo ? `Replying to ${replyTo.handle}...` : "Roast the logic..."}
                             className="flex-1 bg-transparent border-none focus:ring-0 text-white placeholder-gray-600 text-sm px-4 py-3"
                         />
                         <button

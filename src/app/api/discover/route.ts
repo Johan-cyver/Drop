@@ -35,13 +35,18 @@ export async function GET(req: NextRequest) {
                     u.handle,
                     u.avatar,
                     (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
-                    COALESCE(v.value, 0) as myVote
+                    (SELECT COUNT(*) FROM messages WHERE confession_id = c.id) as message_count,
+                    (SELECT COUNT(*) FROM reactions WHERE confession_id = c.id) as reaction_count,
+                    COALESCE(v.value, 0) as myVote,
+                    (
+                        COALESCE((SELECT COUNT(*) FROM reactions WHERE confession_id = c.id), 0) * 1 +
+                        COALESCE((SELECT COUNT(*) FROM messages WHERE confession_id = c.id), 0) * 2
+                    ) as activity_score
                 FROM confessions c
                 LEFT JOIN users u ON u.device_id = c.device_id
                 LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
-                WHERE c.is_open = true 
-                  AND c.status = 'LIVE'
-                ORDER BY c.created_at DESC
+                WHERE c.status = 'LIVE'
+                ORDER BY activity_score DESC, c.created_at DESC
                 LIMIT 50
             `;
             // Standardize return for FE
@@ -51,6 +56,9 @@ export async function GET(req: NextRequest) {
                 upvotes: parseInt(row.upvotes || '0'),
                 downvotes: parseInt(row.downvotes || '0'),
                 comment_count: parseInt(row.comment_count || '0'),
+                message_count: parseInt(row.message_count || '0'),
+                reaction_count: parseInt(row.reaction_count || '0'),
+                activity_score: parseInt(row.activity_score || '0'),
                 is_open: !!row.is_open,
                 is_shadow: !!row.is_shadow
             }));
@@ -58,20 +66,26 @@ export async function GET(req: NextRequest) {
         }
 
         if (queryTerm) {
-            // Search Logic
+            // Search Logic - Search ALL colleges
             const postsRes = await sql`
                 SELECT 
                     c.*,
                     u.handle,
                     u.avatar,
                     (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
-                    COALESCE(v.value, 0) as myVote
+                    (SELECT COUNT(*) FROM messages WHERE confession_id = c.id) as message_count,
+                    (SELECT COUNT(*) FROM reactions WHERE confession_id = c.id) as reaction_count,
+                    COALESCE(v.value, 0) as myVote,
+                    (
+                        COALESCE((SELECT COUNT(*) FROM reactions WHERE confession_id = c.id), 0) * 1 +
+                        COALESCE((SELECT COUNT(*) FROM messages WHERE confession_id = c.id), 0) * 2
+                    ) as activity_score
                 FROM confessions c
                 LEFT JOIN users u ON u.device_id = c.device_id
                 LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
                 WHERE c.status = 'LIVE' 
                 AND (c.content ILIKE ${'%' + queryTerm + '%'} OR c.tag = ${queryTerm})
-                ORDER BY c.created_at DESC
+                ORDER BY activity_score DESC, c.created_at DESC
                 LIMIT 50
             `;
             const results = postsRes.rows.map(row => ({
@@ -80,6 +94,9 @@ export async function GET(req: NextRequest) {
                 upvotes: parseInt(row.upvotes || '0'),
                 downvotes: parseInt(row.downvotes || '0'),
                 comment_count: parseInt(row.comment_count || '0'),
+                message_count: parseInt(row.message_count || '0'),
+                reaction_count: parseInt(row.reaction_count || '0'),
+                activity_score: parseInt(row.activity_score || '0'),
                 is_open: !!row.is_open,
                 is_shadow: !!row.is_shadow
             }));

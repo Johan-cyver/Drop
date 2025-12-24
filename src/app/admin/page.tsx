@@ -7,6 +7,7 @@ export default function AdminPage() {
     const [users, setUsers] = useState<any[]>([]);
     const [posts, setPosts] = useState<any[]>([]);
     const [feedback, setFeedback] = useState<any[]>([]);
+    const [colleges, setColleges] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -40,6 +41,7 @@ export default function AdminPage() {
                 }
                 if (adminData.users) setUsers(adminData.users);
                 if (adminData.posts) setPosts(adminData.posts);
+                if (adminData.colleges) setColleges(adminData.colleges);
                 if (feedbackData.feedback) setFeedback(feedbackData.feedback);
                 setAuthError(false);
             })
@@ -141,7 +143,7 @@ export default function AdminPage() {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
                     <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-1">Total Users</span>
                     <span className="text-2xl font-bold text-white tracking-tighter">{users.length}</span>
@@ -149,6 +151,10 @@ export default function AdminPage() {
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
                     <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-1">Active Drops</span>
                     <span className="text-2xl font-bold text-green-400 tracking-tighter">{posts.filter(p => p.status === 'LIVE').length}</span>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-1">Colleges</span>
+                    <span className="text-2xl font-bold text-blue-400 tracking-tighter">{colleges.length}</span>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
                     <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-1">Feedback</span>
@@ -173,6 +179,7 @@ export default function AdminPage() {
                             <thead className="sticky top-0 bg-[#0a0a0a] z-10">
                                 <tr className="border-b border-white/10 text-gray-500">
                                     <th className="p-3">Handle</th>
+                                    <th className="p-3">College</th>
                                     <th className="p-3">Device ID</th>
                                     <th className="p-3">Status</th>
                                     <th className="p-3 text-right">Actions</th>
@@ -182,6 +189,12 @@ export default function AdminPage() {
                                 {users.map(u => (
                                     <tr key={u.device_id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                                         <td className="p-3 font-bold text-white">{u.handle || 'Guest'}</td>
+                                        <td className="p-3">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs text-gray-300">{u.college_name || 'Unknown'}</span>
+                                                <span className="text-[9px] text-gray-600 uppercase">{u.college_city || ''}</span>
+                                            </div>
+                                        </td>
                                         <td className="p-3 text-gray-400 font-mono tracking-tighter" title={u.device_id}>
                                             {maskId(u.device_id)}
                                         </td>
@@ -214,6 +227,53 @@ export default function AdminPage() {
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                {/* College Servers Panel */}
+                <div className="border border-white/10 rounded-2xl p-6 bg-white/5 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 mb-6">
+                        <Users className="w-5 h-5 text-blue-400" />
+                        <h2 className="text-xl font-bold">College Servers ({colleges.length})</h2>
+                    </div>
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                        {colleges.length > 0 ? colleges.map(college => {
+                            const collegeUsers = users.filter(u => u.college_id === college.id);
+                            return (
+                                <div key={college.id} className="border border-white/5 rounded-xl p-4 bg-black/40 hover:bg-white/5 transition-all">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex-1">
+                                            <h3 className="text-sm font-bold text-white mb-1">{college.name}</h3>
+                                            <p className="text-[10px] text-gray-500 uppercase tracking-wider">{college.city}</p>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-right">
+                                                <div className="text-2xl font-black text-brand-glow">{college.user_count}</div>
+                                                <div className="text-[9px] text-gray-600 uppercase tracking-widest">Members</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {collegeUsers.length > 0 && (
+                                        <div className="mt-3 pt-3 border-t border-white/5">
+                                            <div className="flex flex-wrap gap-2">
+                                                {collegeUsers.slice(0, 10).map(u => (
+                                                    <span key={u.device_id} className="px-2 py-1 bg-white/5 rounded-lg text-[10px] font-bold text-gray-400 border border-white/5">
+                                                        {u.handle || 'Guest'}
+                                                    </span>
+                                                ))}
+                                                {collegeUsers.length > 10 && (
+                                                    <span className="px-2 py-1 bg-brand-glow/10 rounded-lg text-[10px] font-bold text-brand-glow border border-brand-glow/20">
+                                                        +{collegeUsers.length - 10} more
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        }) : (
+                            <div className="text-center text-gray-500 py-20 italic">No colleges found.</div>
+                        )}
                     </div>
                 </div>
 

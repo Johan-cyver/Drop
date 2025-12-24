@@ -283,10 +283,15 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                         {post.is_open && (
                             <button
                                 onClick={(e) => { e.preventDefault(); setIsChatOpen(true); }}
-                                className="h-12 px-4 flex items-center justify-center rounded-2xl bg-brand-glow/10 hover:bg-brand-glow text-brand-glow hover:text-white border border-brand-glow/20 transition-all flex gap-2"
+                                className="h-12 px-4 flex items-center justify-center rounded-2xl bg-brand-glow/10 hover:bg-brand-glow text-brand-glow hover:text-white border border-brand-glow/20 transition-all gap-2 relative"
                             >
                                 <Zap className="w-4 h-4 fill-current" />
                                 <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">Tea Lounge</span>
+                                {(post as any).message_count > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-green-400 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full border border-black/20 shadow-lg">
+                                        {(post as any).message_count}
+                                    </span>
+                                )}
                             </button>
                         )}
                         <Link
