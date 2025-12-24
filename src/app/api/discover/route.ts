@@ -69,40 +69,51 @@ export async function GET(req: NextRequest) {
                     LIMIT 50
                 `;
             } else {
-                // Trending: Hottest (Open + Closed) using Activity Score
-                // Also fetch the LATEST message to show "active discussion" context
+                // Trending: Specific Mix (Top 2 Open + Top 2 Closed)
+                // Constraints: Last 7 Days AND Activity Score > 2
                 postsRes = await sql`
+                    WITH ActivityMetrics AS (
+                        SELECT 
+                            c.*,
+                            COALESCE((SELECT COUNT(*) FROM reactions WHERE confession_id = c.id), 0) * 1 +
+                            COALESCE((SELECT COUNT(*) FROM messages WHERE confession_id = c.id), 0) * 2 as activity_score,
+                            (SELECT content FROM messages WHERE confession_id = c.id ORDER BY created_at DESC LIMIT 1) as latest_message_content,
+                            (SELECT handle FROM messages WHERE confession_id = c.id ORDER BY created_at DESC LIMIT 1) as latest_message_handle
+                        FROM confessions c
+                        WHERE c.status = 'LIVE'
+                        AND c.college_id = ${userCollege}
+                        AND c.created_at > NOW() - INTERVAL '7 days' -- Time Limit
+                    ),
+                    TopOpen AS (
+                        SELECT * FROM ActivityMetrics
+                        WHERE is_open = true
+                        AND activity_score > 2 -- Minimum Threshold
+                        ORDER BY activity_score DESC
+                        LIMIT 2
+                    ),
+                    TopClosed AS (
+                        SELECT * FROM ActivityMetrics
+                        WHERE is_open = false
+                        AND activity_score > 2 -- Minimum Threshold
+                        ORDER BY activity_score DESC
+                        LIMIT 2
+                    )
                     SELECT 
-                        c.*,
+                        am.*,
                         u.handle,
                         u.avatar,
-                        (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
-                        (SELECT COUNT(*) FROM messages WHERE confession_id = c.id) as message_count,
-                        (SELECT COUNT(*) FROM reactions WHERE confession_id = c.id) as reaction_count,
-                        (
-                            SELECT content FROM messages 
-                            WHERE confession_id = c.id 
-                            ORDER BY created_at DESC 
-                            LIMIT 1
-                        ) as latest_message_content,
-                        (
-                            SELECT handle FROM messages 
-                            WHERE confession_id = c.id 
-                            ORDER BY created_at DESC 
-                            LIMIT 1
-                        ) as latest_message_handle,
-                        COALESCE(v.value, 0) as myVote,
-                        (
-                            COALESCE((SELECT COUNT(*) FROM reactions WHERE confession_id = c.id), 0) * 1 +
-                            COALESCE((SELECT COUNT(*) FROM messages WHERE confession_id = c.id), 0) * 2
-                        ) as activity_score
-                    FROM confessions c
-                    LEFT JOIN users u ON u.device_id = c.device_id
-                    LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
-                    WHERE c.status = 'LIVE'
-                      AND c.college_id = ${userCollege}
-                    ORDER BY activity_score DESC, c.created_at DESC
-                    LIMIT 50
+                        (SELECT COUNT(*) FROM comments WHERE confession_id = am.id) as comment_count,
+                        (SELECT COUNT(*) FROM messages WHERE confession_id = am.id) as message_count,
+                        (SELECT COUNT(*) FROM reactions WHERE confession_id = am.id) as reaction_count,
+                        COALESCE(v.value, 0) as myVote
+                    FROM (
+                        SELECT * FROM TopOpen
+                        UNION ALL
+                        SELECT * FROM TopClosed
+                    ) am
+                    LEFT JOIN users u ON u.device_id = am.device_id
+                    LEFT JOIN votes v ON v.confession_id = am.id AND v.device_id = ${deviceId || ''}
+                    ORDER BY am.activity_score DESC
                 `;
             }
 
