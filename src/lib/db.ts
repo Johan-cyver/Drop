@@ -1,7 +1,7 @@
-import { sql, createPool } from '@vercel/postgres';
+import { sql, createPool, VercelPool } from '@vercel/postgres';
 
-// Vercel Postgres is serverless and async by default.
-// We export the query helper to use in our routes.
+// Singleton pool instance
+let pool: VercelPool | null = null;
 
 // Helper for database connection string
 const getPostgresUrl = () => {
@@ -11,21 +11,21 @@ const getPostgresUrl = () => {
         process.env.NEON_DATABASE_URL;
 };
 
+// Create or return existing pool
+const getPool = () => {
+    if (pool) return pool;
+    const url = getPostgresUrl();
+    if (!url) throw new Error('DATABASE_NOT_CONNECTED');
+
+    pool = createPool({ connectionString: url });
+    return pool;
+};
+
 // Create a safe query wrapper
 export async function query(text: string, params: any[] = []) {
-    const url = getPostgresUrl();
-
-    if (!url) {
-        throw new Error('DATABASE_NOT_CONNECTED');
-    }
-
     try {
-        // If the library's default 'sql' fails to find POSTGRES_URL, we use a manual pool
-        if (!process.env.POSTGRES_URL && url) {
-            const pool = createPool({ connectionString: url });
-            return await pool.query(text, params);
-        }
-        return await sql.query(text, params);
+        const activePool = getPool();
+        return await activePool.query(text, params);
     } catch (error) {
         console.error('Database Error:', error);
         throw error;

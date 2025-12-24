@@ -1,70 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
     try {
-        if (!process.env.POSTGRES_URL) {
-            return NextResponse.json({ error: 'Database not connected (POSTGRES_URL missing)' }, { status: 500 });
+        const { confession_id, value, device_id } = await req.json();
+
+        if (!confession_id || !device_id) {
+            return NextResponse.json({ error: 'Missing data' }, { status: 400 });
         }
 
-        const body = await req.json();
-        const { confession_id, value, device_id } = body; // value: 1 or -1
+        // 1. Update or Insert Vote
+        await query(`
+            INSERT INTO votes (device_id, confession_id, value)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (device_id, confession_id)
+            DO UPDATE SET value = $3
+        `, [device_id, confession_id, value]);
 
-        if (!confession_id || !device_id || ![1, -1].includes(value)) {
-            return NextResponse.json({ error: 'Invalid vote data' }, { status: 400 });
-        }
+        // 2. Recalculate upvotes/downvotes for the confession
+        const votesRes = await query(`
+            SELECT 
+                SUM(CASE WHEN value = 1 THEN 1 ELSE 0 END) as ups,
+                SUM(CASE WHEN value = -1 THEN 1 ELSE 0 END) as downs
+            FROM votes
+            WHERE confession_id = $1
+        `, [confession_id]);
 
-        // Vercel Postgres Transaction
-        // We use a simple sequential logic here effectively since we can't lock easily without more complex setup
-        // But for this scale, sequential awaits are "good enough" vs the race condition risk (which is small for now)
+        const ups = parseInt(votesRes.rows[0].ups || '0');
+        const downs = parseInt(votesRes.rows[0].downs || '0');
 
-        // 1. Check existing vote
-        const existingRes = await sql`
-            SELECT value FROM votes WHERE device_id = ${device_id} AND confession_id = ${confession_id}
-        `;
-        const existing = existingRes.rows[0];
+        await query(`
+            UPDATE confessions 
+            SET upvotes = $1, downvotes = $2 
+            WHERE id = $3
+        `, [ups, downs, confession_id]);
 
-        let delta = 0;
+        return NextResponse.json({ success: true, upvotes: ups, downvotes: downs });
 
-        if (existing) {
-            if (existing.value === value) {
-                // Toggle Off (Remove vote)
-                await sql`DELETE FROM votes WHERE device_id = ${device_id} AND confession_id = ${confession_id}`;
-                delta = -value; // Reverse the previous effect
-            } else {
-                // Change Vote (e.g. Up to Down)
-                await sql`UPDATE votes SET value = ${value} WHERE device_id = ${device_id} AND confession_id = ${confession_id}`;
-                delta = value * 2; // e.g. -1 -> 1 is +2 difference
-            }
-        } else {
-            // New Vote
-            await sql`INSERT INTO votes (device_id, confession_id, value) VALUES (${device_id}, ${confession_id}, ${value})`;
-            delta = value;
-        }
-
-        // 2. Update Confession Counter using atomic recalculation
-        if (delta !== 0) {
-            const countsRes = await sql`
-                SELECT 
-                    SUM(CASE WHEN value = 1 THEN 1 ELSE 0 END) as ups,
-                    SUM(CASE WHEN value = -1 THEN 1 ELSE 0 END) as downs
-                FROM votes WHERE confession_id = ${confession_id}
-            `;
-            const counts = countsRes.rows[0];
-
-            await sql`
-                UPDATE confessions 
-                SET upvotes = ${counts.ups || 0}, downvotes = ${counts.downs || 0} 
-                WHERE id = ${confession_id}
-            `;
-        }
-
-        return NextResponse.json({ success: true }, { status: 200 });
-
-    } catch (error) {
+    } catch (error: any) {
         console.error('Vote Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: 'VOTE_FAILED', message: error.message }, { status: 500 });
     }
 }
