@@ -116,7 +116,7 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
         : `https://api.dicebear.com/7.x/bottts/svg?seed=${post.public_id || 'ghost'}`;
 
     return (
-        <AnimatePresence>
+        <>
             <motion.article
                 layout
                 initial={{ opacity: 0, y: 20 }}
