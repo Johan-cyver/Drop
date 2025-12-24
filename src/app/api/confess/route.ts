@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { content, device_id, image, is_shadow, is_open } = body;
+        const { content, device_id, image, is_shadow, is_open, unlock_threshold } = body;
 
         if (!content || !device_id) {
             return NextResponse.json({ error: 'Missing content or likely device_id' }, { status: 400 });
@@ -20,7 +20,11 @@ export async function POST(req: NextRequest) {
 
         // 1. Data Prep for Timestamps
         const now = new Date();
-        const { expires_at, drop_active_at } = calculateTemporalTimestamps(now);
+        // Fix: Use simple 24h expiry from constants.ts (DROP_LIFESPAN)
+        const DROP_LIFESPAN = 24 * 60 * 60 * 1000; // 24 hours
+        // Start active immediately
+        const expires_at = new Date(now.getTime() + DROP_LIFESPAN).toISOString();
+        const drop_active_at = now.toISOString(); // Active immediately upon creation
 
         // 2. Rate Limit Check (Postgres)
         const lastPostRes = await sql`
@@ -75,18 +79,19 @@ export async function POST(req: NextRequest) {
 
         // 5. Transactional Insert
         // A. Insert Post
-        const unlockVotes = is_shadow ? 5 : 0;
+        // Use user provided threshold or default to 5
+        const finalThreshold = is_shadow ? (unlock_threshold || 5) : 0;
 
         await sql`
             INSERT INTO confessions(
                 id, content, college_id, device_id, status, tag, public_id,
                 expires_at, drop_active_at, created_at, image,
-                is_shadow, is_open, unlock_votes
+                is_shadow, is_open, unlock_votes, unlock_threshold
             )
             VALUES(
                 ${id}, ${content}, ${user.college_id}, ${device_id}, ${status}, ${tag}, ${publicId},
                 ${expires_at}, ${drop_active_at}, ${now.toISOString()}, ${image || null},
-                ${is_shadow || false}, ${is_open || false}, ${unlockVotes}
+                ${is_shadow || false}, ${is_open || false}, 0, ${finalThreshold}
             )
         `;
 

@@ -75,10 +75,13 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
         setIsSubmitting(true);
         try {
             // Updated onSubmit to handle new flags
-            const result = await (onSubmit as any)(content, '#General', image || undefined, {
+            const options = {
                 is_shadow: isShadow,
-                is_open: isOpenStatus
-            });
+                is_open: isOpenStatus,
+                unlock_threshold: isShadow ? unlockThreshold : undefined, // Only send if shadow
+            };
+
+            const result = await onSubmit(content, '#General', image || undefined, options);
 
             if (result && result.safety_warning) {
                 setShowHelpline(true);
@@ -89,6 +92,7 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                 setImage(null);
                 setIsShadow(false);
                 setIsOpenStatus(false);
+                setUnlockThreshold(5); // Reset threshold
             }
         } finally {
             setIsSubmitting(false);

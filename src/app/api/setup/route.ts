@@ -106,6 +106,10 @@ export async function GET(req: NextRequest) {
                 image TEXT,
                 expires_at TIMESTAMP,
                 drop_active_at TIMESTAMP,
+                is_shadow BOOLEAN DEFAULT FALSE,
+                is_open BOOLEAN DEFAULT FALSE,
+                unlock_votes INTEGER DEFAULT 5,
+                unlock_threshold INTEGER DEFAULT 5,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `;

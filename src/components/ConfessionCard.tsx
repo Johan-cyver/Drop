@@ -1,4 +1,4 @@
-import { ArrowBigUp, ArrowBigDown, Send, Clock, Bookmark, Share2, Sparkles, MessageCircle, Zap } from 'lucide-react';
+import { ArrowBigUp, ArrowBigDown, Send, Clock, Bookmark, Share2, Sparkles, MessageCircle, Zap, Lock } from 'lucide-react';
 import { showToast } from '@/components/NotificationToast';
 import { cn, formatNumber, formatTime, formatCountdown, getTimeRemaining } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -115,24 +115,17 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
         : `https://api.dicebear.com/7.x/bottts/svg?seed=${post.public_id || 'ghost'}`;
 
     return (
-        <>
+        <AnimatePresence>
             <motion.article
                 layout
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
                 className={cn(
-                    "glass-card rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden group border transition-all duration-500",
-                    post.is_shadow ? "border-white/20" : "border-white/5 hover:border-white/10"
+                    "relative group rounded-3xl p-1 transition-all duration-300",
+                    isDropActive ? "bg-gradient-to-br from-white/5 to-white/0 hover:bg-white/10" : "bg-gray-900/50 border border-red-900/20"
                 )}
             >
-                {/* Dynamic Background Effect */}
-                <div className={cn(
-                    "absolute -top-20 -right-20 w-64 h-64 blur-[80px] rounded-full pointer-events-none transition-all duration-1000 opacity-20",
-                    isDropActive
-                        ? "bg-gradient-to-br from-orange-500 to-yellow-500 animate-pulse"
-                        : "bg-gradient-to-br from-brand-glow to-indigo-600 group-hover:opacity-30"
-                )} />
-
                 {/* Header */}
                 <div className="flex justify-between items-start mb-6 relative z-10">
                     <div className="flex items-center gap-4">
