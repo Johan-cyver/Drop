@@ -29,6 +29,16 @@ export async function GET(req: NextRequest) {
         }
 
         if (openDrops === 'true') {
+            // First, get the user's college
+            const userRes = await sql`
+                SELECT college_id FROM users WHERE device_id = ${deviceId || ''}
+            `;
+            const userCollege = userRes.rows[0]?.college_id;
+
+            if (!userCollege) {
+                return NextResponse.json({ results: [] });
+            }
+
             const postsRes = await sql`
                 SELECT 
                     c.*,
@@ -46,6 +56,7 @@ export async function GET(req: NextRequest) {
                 LEFT JOIN users u ON u.device_id = c.device_id
                 LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
                 WHERE c.status = 'LIVE'
+                  AND c.college_id = ${userCollege}
                 ORDER BY activity_score DESC, c.created_at DESC
                 LIMIT 50
             `;
@@ -66,7 +77,17 @@ export async function GET(req: NextRequest) {
         }
 
         if (queryTerm) {
-            // Search Logic - Search ALL colleges
+            // First, get the user's college
+            const userRes = await sql`
+                SELECT college_id FROM users WHERE device_id = ${deviceId || ''}
+            `;
+            const userCollege = userRes.rows[0]?.college_id;
+
+            if (!userCollege) {
+                return NextResponse.json({ results: [] });
+            }
+
+            // Search within user's college only
             const postsRes = await sql`
                 SELECT 
                     c.*,
@@ -84,6 +105,7 @@ export async function GET(req: NextRequest) {
                 LEFT JOIN users u ON u.device_id = c.device_id
                 LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
                 WHERE c.status = 'LIVE' 
+                AND c.college_id = ${userCollege}
                 AND (c.content ILIKE ${'%' + queryTerm + '%'} OR c.tag = ${queryTerm})
                 ORDER BY activity_score DESC, c.created_at DESC
                 LIMIT 50

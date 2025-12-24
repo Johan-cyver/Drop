@@ -109,12 +109,12 @@ function DiscoverContent() {
 
                 <div className="p-4 lg:p-6 space-y-8">
 
-                    {/* Trending Confessions Section */}
+                    {/* College Confessions Section */}
                     {results.length === 0 && !loading && openDrops.length > 0 && (
                         <section>
                             <div className="flex items-center gap-2 mb-4 text-brand-glow px-2">
                                 <Zap className="w-4 h-4 fill-current" />
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-white">Trending Confessions</h3>
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-white">Your College Feed</h3>
                             </div>
                             <div className="space-y-4">
                                 {openDrops.map(post => (

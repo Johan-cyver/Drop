@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
             // We use a simplified seed for the setup route
             const defaultColleges = [
                 ['dsu', 'Dayananda Sagar University', 'Bengaluru'],
+                ['dsce', 'Dayananda Sagar College of Engineering', 'Bengaluru'],
                 ['rvce', 'RV College of Engineering', 'Bengaluru'],
                 ['bmsce', 'BMS College of Engineering', 'Bengaluru'],
                 ['pes-rr', 'PES University (RR Campus)', 'Bengaluru'],
