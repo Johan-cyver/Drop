@@ -3,14 +3,14 @@ import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
     try {
-        // Security Gate
-        const auth = req.headers.get('x-admin-secret');
+        const { searchParams } = new URL(req.url);
+        const auth = req.headers.get('x-admin-secret') || searchParams.get('secret');
         const secret = process.env.ADMIN_SECRET || 'drop_admin_2024';
 
         if (auth !== secret) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return NextResponse.json({ error: 'Unauthorized. Pass ?secret=your_secret in URL.' }, { status: 401 });
         }
 
         // Migrate existing users to DSU
