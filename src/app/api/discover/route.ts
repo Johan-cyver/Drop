@@ -70,6 +70,7 @@ export async function GET(req: NextRequest) {
                 `;
             } else {
                 // Trending: Hottest (Open + Closed) using Activity Score
+                // Also fetch the LATEST message to show "active discussion" context
                 postsRes = await sql`
                     SELECT 
                         c.*,
@@ -78,6 +79,18 @@ export async function GET(req: NextRequest) {
                         (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
                         (SELECT COUNT(*) FROM messages WHERE confession_id = c.id) as message_count,
                         (SELECT COUNT(*) FROM reactions WHERE confession_id = c.id) as reaction_count,
+                        (
+                            SELECT content FROM messages 
+                            WHERE confession_id = c.id 
+                            ORDER BY created_at DESC 
+                            LIMIT 1
+                        ) as latest_message_content,
+                        (
+                            SELECT handle FROM messages 
+                            WHERE confession_id = c.id 
+                            ORDER BY created_at DESC 
+                            LIMIT 1
+                        ) as latest_message_handle,
                         COALESCE(v.value, 0) as myVote,
                         (
                             COALESCE((SELECT COUNT(*) FROM reactions WHERE confession_id = c.id), 0) * 1 +
@@ -103,6 +116,8 @@ export async function GET(req: NextRequest) {
                 message_count: parseInt(row.message_count || '0'),
                 reaction_count: parseInt(row.reaction_count || '0'),
                 activity_score: parseInt(row.activity_score || '0'),
+                latest_message_content: row.latest_message_content,
+                latest_message_handle: row.latest_message_handle,
                 is_open: !!row.is_open,
                 is_shadow: !!row.is_shadow
             }));
