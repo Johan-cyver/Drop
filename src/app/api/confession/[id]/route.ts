@@ -4,10 +4,10 @@ import { query } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+    const id = params.id;
     try {
         const { searchParams } = new URL(req.url);
         const deviceId = searchParams.get('device_id') || '';
-        const id = params.id;
 
         if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
 
@@ -30,6 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         const post = postRes.rows[0];
 
         if (!post) {
+            console.error('Confession Not Found in DB:', id);
             return NextResponse.json({ error: 'Confession not found' }, { status: 404 });
         }
 
@@ -45,22 +46,31 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             ORDER BY c.created_at ASC
         `, [id]);
 
-        // Fetch Reactions
+        // Fetch Reactions - Fixed GROUP BY error
         const reactionsRes = await query(`
-            SELECT emoji, COUNT(*) as count,
-                   EXISTS(SELECT 1 FROM reactions r2 WHERE r2.confession_id = r.confession_id AND r2.emoji = r.emoji AND r2.device_id = $1) as active
+            SELECT 
+                emoji, 
+                COUNT(*) as count,
+                EXISTS(
+                    SELECT 1 FROM reactions r2 
+                    WHERE r2.confession_id = $1 
+                    AND r2.emoji = r.emoji 
+                    AND r2.device_id = $2
+                ) as active
             FROM reactions r
-            WHERE confession_id = $2
+            WHERE confession_id = $1
             GROUP BY emoji
-        `, [deviceId, id]);
+        `, [id, deviceId]);
 
-        // Standardize types
+        // Standardize types and ensure ID is present
         const now = new Date();
         const dropActiveAt = post.drop_active_at ? new Date(post.drop_active_at) : null;
         const expiresAt = post.expires_at ? new Date(post.expires_at) : null;
 
         const formattedPost = {
             ...post,
+            id: post.id, // Explicitly ensure ID is present for components
+            content: post.content,
             myVote: parseInt(post.myvote || '0'),
             upvotes: parseInt(post.upvotes || '0'),
             downvotes: parseInt(post.downvotes || '0'),
@@ -70,14 +80,26 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             isDropActive: dropActiveAt && expiresAt
                 ? (now >= dropActiveAt && now < expiresAt)
                 : false,
-            comments: commentsRes.rows,
-            reactions: reactionsRes.rows.map(r => ({ emoji: r.emoji, count: parseInt(r.count), active: !!r.active }))
+            comments: commentsRes.rows.map(c => ({
+                ...c,
+                id: c.id,
+                created_at: c.created_at
+            })),
+            reactions: reactionsRes.rows.map(r => ({
+                emoji: r.emoji,
+                count: parseInt(r.count),
+                active: !!r.active
+            }))
         };
 
         return NextResponse.json(formattedPost);
 
     } catch (error: any) {
-        console.error('Single Confession Error:', error);
+        console.error('Single Confession API Error:', {
+            id,
+            error: error.message,
+            stack: error.stack
+        });
         return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
     }
 }
