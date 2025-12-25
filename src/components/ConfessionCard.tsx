@@ -289,69 +289,62 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                            {post.is_open && (
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setIsChatOpen(true);
-                                    }}
-                                    className={cn(
-                                        "h-12 px-4 flex items-center justify-center rounded-2xl border transition-all gap-2 relative",
-                                        isDropActive
-                                            ? "bg-brand-glow/10 hover:bg-brand-glow text-brand-glow hover:text-white border-brand-glow/20"
-                                            : "bg-gray-800/50 text-gray-500 border-white/5 cursor-pointer hover:bg-gray-800/80"
-                                    )}
-                                    title={!isDropActive ? "View Echoes" : "Open Tea Lounge"}
-                                >
-                                    <Zap className={cn("w-4 h-4", isDropActive ? "fill-current" : "")} />
-                                    <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">
-                                        {isDropActive ? "Tea Lounge" : "Echoed Lounge"}
-                                    </span>
-                                    {(post as any).message_count > 0 && (
-                                        <span className="absolute -top-1 -right-1 bg-green-400 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full border border-black/20 shadow-lg">
-                                            {(post as any).message_count}
-                                        </span>
-                                    )}
-                                </button>
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setIsChatOpen(true);
+                            }}
+                            className={cn(
+                                "h-12 px-6 flex items-center justify-center rounded-2xl border transition-all gap-2 relative shadow-xl active:scale-95",
+                                isDropActive
+                                    ? "bg-brand-glow text-white border-brand-glow/20"
+                                    : "bg-gray-800/80 text-gray-400 border-white/5 cursor-pointer"
                             )}
+                            title={!isDropActive ? "View Echoes" : "Open Tea Lounge"}
+                        >
+                            <Zap className={cn("w-4 h-4", isDropActive ? "fill-current" : "")} />
+                            <span className="text-[10px] font-black uppercase tracking-widest">
+                                {isDropActive ? "Tea Lounge" : "Echoed Lounge"}
+                            </span>
+                            {(post as any).message_count > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-green-400 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full border border-black/20 shadow-lg">
+                                    {(post as any).message_count}
+                                </span>
+                            )}
+                        </button>
 
-                            <Link
-                                href={`/confession/${post.id}`}
-                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-brand-glow border border-white/5 transition-all flex flex-col items-center justify-center gap-0.5"
-                            >
-                                <MessageCircle className="w-4 h-4" />
-                                <span className="text-[10px] font-black">{post.comment_count || 0}</span>
-                            </Link>
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                const saved = JSON.parse(localStorage.getItem('my_echoes') || '[]');
+                                const exists = saved.find((p: Post) => p.id === post.id);
 
-                            <button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    const saved = JSON.parse(localStorage.getItem('my_echoes') || '[]');
-                                    const exists = saved.find((p: Post) => p.id === post.id);
+                                if (exists) {
+                                    const newSaved = saved.filter((p: Post) => p.id !== post.id);
+                                    localStorage.setItem('my_echoes', JSON.stringify(newSaved));
+                                    showToast('Removed from Echoes', 'info');
+                                } else {
+                                    localStorage.setItem('my_echoes', JSON.stringify([post, ...saved]));
+                                    showToast('Saved to Echoes!', 'success');
+                                }
+                                window.dispatchEvent(new Event('storage'));
+                            }}
+                            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-brand-glow/10 text-gray-500 hover:text-brand-glow border border-white/5 transition-all group/save active:scale-95"
+                        >
+                            <Bookmark
+                                className={cn(
+                                    "w-5 h-5 group-hover/save:fill-current",
+                                    (typeof window !== 'undefined' && JSON.parse(localStorage.getItem('my_echoes') || '[]').some((p: any) => p.id === post.id)) ? "text-brand-glow fill-current" : ""
+                                )}
+                            />
+                        </button>
 
-                                    if (exists) {
-                                        const newSaved = saved.filter((p: Post) => p.id !== post.id);
-                                        localStorage.setItem('my_echoes', JSON.stringify(newSaved));
-                                    } else {
-                                        // Strip comments before saving to Echoes
-                                        const { comments, ...sanitizedPost } = post as any;
-                                        localStorage.setItem('my_echoes', JSON.stringify([sanitizedPost, ...saved]));
-                                    }
-                                    window.dispatchEvent(new Event('storage'));
-                                }}
-                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-brand-glow/10 text-gray-500 hover:text-brand-glow border border-white/5 transition-all group/save"
-                            >
-                                <Bookmark className="w-5 h-5 group-hover/save:fill-current" />
-                            </button>
-
-                            <button
-                                onClick={(e) => { e.preventDefault(); setIsShareOpen(true); }}
-                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-brand-glow/10 hover:bg-brand-glow text-gray-400 hover:text-white border border-brand-glow/20 transition-all shadow-[0_4px_15px_rgba(139,92,246,0.1)]"
-                            >
-                                <Share2 className="w-5 h-5" />
-                            </button>
-                        </div>
+                        <button
+                            onClick={(e) => { e.preventDefault(); setIsShareOpen(true); }}
+                            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-brand-glow/10 hover:bg-brand-glow text-gray-400 hover:text-white border border-brand-glow/20 transition-all shadow-[0_4px_15px_rgba(139,92,246,0.1)] active:scale-95"
+                        >
+                            <Share2 className="w-5 h-5" />
+                        </button>
 
                         {/* Active Activity Snippet */}
                         {(post as any).latest_message_content && (

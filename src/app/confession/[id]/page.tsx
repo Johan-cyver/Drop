@@ -11,7 +11,8 @@ import ConfessionCard, { Post } from '@/components/ConfessionCard';
 import ComposeModal from '@/components/ComposeModal';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import CommentSection from '@/components/CommentSection';
+import DropChat from '@/components/DropChat';
+import { Zap } from 'lucide-react';
 import { showToast } from '@/components/NotificationToast';
 import FeedbackModal from '@/components/FeedbackModal';
 
@@ -32,10 +33,10 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
         setDeviceId(did);
         fetchPost(did);
 
-        // Polling for real-time updates (comments, reactions, votes)
+        // Polling for real-time updates (reactions, votes)
         const interval = setInterval(() => {
             fetchPost(did!);
-        }, 3000);
+        }, 5000);
 
         return () => clearInterval(interval);
     }, [params.id]);
@@ -125,12 +126,23 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
                     ) : post ? (
                         <>
                             <ConfessionCard post={post} onVote={handleVote} />
-                            <CommentSection
-                                confessionId={post.id}
-                                comments={(post as any).comments || []}
-                                deviceId={deviceId}
-                                onCommentAdded={() => fetchPost(deviceId)}
-                            />
+                            <div className="mt-8 border-t border-white/5 pt-8">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-brand-glow mb-6 flex items-center gap-2">
+                                    <Zap className="w-4 h-4 fill-current" />
+                                    Tea Lounge
+                                </h3>
+                                <div className="h-[600px] border border-white/5 rounded-[2.5rem] overflow-hidden bg-white/[0.02]">
+                                    <DropChat
+                                        confessionId={post.id}
+                                        deviceId={deviceId}
+                                        userHandle={localStorage.getItem('user_handle') || undefined}
+                                        userAvatar={localStorage.getItem('user_avatar') || undefined}
+                                        isDropActive={post.isDropActive}
+                                        onClose={() => { }}
+                                        embedded={true}
+                                    />
+                                </div>
+                            </div>
                         </>
                     ) : null}
                 </div>

@@ -24,9 +24,10 @@ interface DropChatProps {
     userAvatar?: string;
     isDropActive?: boolean;
     onClose: () => void;
+    embedded?: boolean;
 }
 
-export default function DropChat({ confessionId, deviceId, userHandle, userAvatar, isDropActive = true, onClose }: DropChatProps) {
+export default function DropChat({ confessionId, deviceId, userHandle, userAvatar, isDropActive = true, onClose, embedded = false }: DropChatProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(true);
@@ -105,10 +106,13 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
 
     return (
         <motion.div
-            initial={{ opacity: 0, x: '100%' }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            className="fixed inset-y-0 right-0 w-full sm:w-[400px] bg-dark-950/95 backdrop-blur-2xl border-l border-white/10 z-[60] flex flex-col shadow-[-20px_0_50px_rgba(0,0,0,0.5)]"
+            initial={embedded ? { opacity: 1 } : { opacity: 0, x: '100%' }}
+            animate={embedded ? { opacity: 1 } : { opacity: 1, x: 0 }}
+            exit={embedded ? { opacity: 1 } : { opacity: 0, x: '100%' }}
+            className={cn(
+                "bg-dark-950/95 backdrop-blur-2xl flex flex-col shadow-[-20px_0_50px_rgba(0,0,0,0.5)]",
+                embedded ? "w-full h-full relative border-none" : "fixed inset-y-0 right-0 w-full sm:w-[400px] border-l border-white/10 z-[60]"
+            )}
         >
             {/* Header */}
             <div className="p-6 border-b border-white/5 flex items-center justify-between">
@@ -124,9 +128,11 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
                         )}
                     </div>
                 </div>
-                <button onClick={onClose} className="p-2 rounded-2xl bg-white/5 text-gray-400 hover:text-white transition">
-                    <X className="w-6 h-6" />
-                </button>
+                {!embedded && (
+                    <button onClick={onClose} className="p-2 rounded-2xl bg-white/5 text-gray-400 hover:text-white transition">
+                        <X className="w-6 h-6" />
+                    </button>
+                )}
             </div>
 
             {/* Messages */}

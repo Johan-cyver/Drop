@@ -34,18 +34,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Confession not found' }, { status: 404 });
         }
 
-        // Fetch Comments - Using LEFT JOIN to ensure comments are visible even if user profile is missing
-        const commentsRes = await query(`
-            SELECT 
-                c.*,
-                COALESCE(u.handle, 'Anonymous') as handle,
-                COALESCE(u.avatar, 'ghost') as avatar
-            FROM comments c
-            LEFT JOIN users u ON u.device_id = c.device_id
-            WHERE c.confession_id = $1
-            ORDER BY c.created_at ASC
-        `, [id]);
-
         // Fetch Reactions - Fixed GROUP BY error
         const reactionsRes = await query(`
             SELECT 
@@ -69,7 +57,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
         const formattedPost = {
             ...post,
-            id: post.id, // Explicitly ensure ID is present for components
+            id: post.id,
             content: post.content,
             myVote: parseInt(post.myvote || '0'),
             upvotes: parseInt(post.upvotes || '0'),
@@ -80,11 +68,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             isDropActive: dropActiveAt && expiresAt
                 ? (now >= dropActiveAt && now < expiresAt)
                 : false,
-            comments: commentsRes.rows.map(c => ({
-                ...c,
-                id: c.id,
-                created_at: c.created_at
-            })),
             reactions: reactionsRes.rows.map(r => ({
                 emoji: r.emoji,
                 count: parseInt(r.count),
