@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { query } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const { searchParams } = new URL(req.url);
-        const deviceId = searchParams.get('device_id');
+        const deviceId = searchParams.get('device_id') || '';
         const id = params.id;
 
         if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
 
-        const postRes = await sql`
+        const postRes = await query(`
             SELECT 
                 c.*, 
                 COALESCE(v.value, 0) as myVote,
@@ -20,10 +22,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                 c.is_open,
                 c.unlock_votes
             FROM confessions c
-            LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = ${deviceId || ''}
+            LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = $1
             LEFT JOIN users u ON u.device_id = c.device_id
-            WHERE c.id = ${id}
-        `;
+            WHERE c.id = $2
+        `, [deviceId, id]);
 
         const post = postRes.rows[0];
 
@@ -31,26 +33,26 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Confession not found' }, { status: 404 });
         }
 
-        // Fetch Comments
-        const commentsRes = await sql`
+        // Fetch Comments - Using LEFT JOIN to ensure comments are visible even if user profile is missing
+        const commentsRes = await query(`
             SELECT 
                 c.*,
-                u.handle,
-                u.avatar
+                COALESCE(u.handle, 'Anonymous') as handle,
+                COALESCE(u.avatar, 'ghost') as avatar
             FROM comments c
-            JOIN users u ON u.device_id = c.device_id
-            WHERE c.confession_id = ${id}
+            LEFT JOIN users u ON u.device_id = c.device_id
+            WHERE c.confession_id = $1
             ORDER BY c.created_at ASC
-        `;
+        `, [id]);
 
         // Fetch Reactions
-        const reactionsRes = await sql`
+        const reactionsRes = await query(`
             SELECT emoji, COUNT(*) as count,
-                   EXISTS(SELECT 1 FROM reactions r2 WHERE r2.confession_id = r.confession_id AND r2.emoji = r.emoji AND r2.device_id = ${deviceId}) as active
+                   EXISTS(SELECT 1 FROM reactions r2 WHERE r2.confession_id = r.confession_id AND r2.emoji = r.emoji AND r2.device_id = $1) as active
             FROM reactions r
-            WHERE confession_id = ${id}
+            WHERE confession_id = $2
             GROUP BY emoji
-        `;
+        `, [deviceId, id]);
 
         // Standardize types
         const now = new Date();
@@ -74,8 +76,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
         return NextResponse.json(formattedPost);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Single Confession Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
     }
 }

@@ -8,8 +8,8 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { confession_id, content, device_id, parent_id } = body;
 
-        if (!confession_id || !content || !device_id) {
-            console.error('Comment Field Validation Failed:', {
+        if (!confession_id?.toString().trim() || !content?.toString().trim() || !device_id?.toString().trim()) {
+            console.error('Comment Field Validation Failed (Strict):', {
                 has_confession_id: !!confession_id,
                 has_content: !!content,
                 has_device_id: !!device_id,

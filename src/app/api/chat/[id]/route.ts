@@ -54,6 +54,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             RETURNING *
         `;
 
+        // Award "Impact Coin" for participation (one-time per author-participant pair per post)
+        const authorRes = await sql`SELECT device_id FROM confessions WHERE id = ${confessionId}`;
+        const authorId = authorRes.rows[0]?.device_id;
+        if (authorId && authorId !== device_id) {
+            const actionType = 'CHAT_PARTICIPATION';
+            const alreadyAwarded = await sql`SELECT 1 FROM reward_tracking WHERE confession_id = ${confessionId} AND device_id = ${device_id} AND action_type = ${actionType}`;
+            if (alreadyAwarded.rows.length === 0) {
+                await sql`UPDATE users SET coins = coins + 1 WHERE device_id = ${authorId}`;
+                await sql`INSERT INTO reward_tracking (confession_id, device_id, action_type) VALUES (${confessionId}, ${device_id}, ${actionType})`;
+            }
+        }
+
         return NextResponse.json(msgRes.rows[0]);
     } catch (err: any) {
         console.error('Chat POST Error:', err);

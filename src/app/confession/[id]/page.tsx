@@ -31,17 +31,31 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
         }
         setDeviceId(did);
         fetchPost(did);
+
+        // Polling for real-time updates (comments, reactions, votes)
+        const interval = setInterval(() => {
+            fetchPost(did!);
+        }, 3000);
+
+        return () => clearInterval(interval);
     }, [params.id]);
 
     const fetchPost = async (did?: string) => {
         try {
             const res = await fetch(`/api/confession/${params.id}?device_id=${did || deviceId}`);
-            if (res.status === 404) {
+            if (!res.ok) {
                 setError(true);
                 return;
             }
             const data = await res.json();
+
+            if (!data || data.error) {
+                setError(true);
+                return;
+            }
+
             setPost(data);
+            setError(false);
 
             // Deep-linking: save college_id for guest redirection
             if (data.college_id) {
