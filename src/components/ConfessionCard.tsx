@@ -54,6 +54,10 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
     const [reactions, setReactions] = useState(post.reactions || []);
     const emojis = ['🔥', '😂', '😮', '🧊', '🚩'];
 
+    useEffect(() => {
+        if (post.reactions) setReactions(post.reactions);
+    }, [post.reactions]);
+
     const handleReaction = async (emoji: string) => {
         // Optimistic
         const existing = reactions.find(r => r.emoji === emoji);
@@ -297,13 +301,13 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                                         "h-12 px-4 flex items-center justify-center rounded-2xl border transition-all gap-2 relative",
                                         isDropActive
                                             ? "bg-brand-glow/10 hover:bg-brand-glow text-brand-glow hover:text-white border-brand-glow/20"
-                                            : "bg-gray-800/50 text-gray-500 border-white/5 cursor-not-allowed hover:bg-gray-800/50"
+                                            : "bg-gray-800/50 text-gray-500 border-white/5 cursor-pointer hover:bg-gray-800/80"
                                     )}
-                                    title={!isDropActive ? "Expired (Save to Echoes to access)" : "Open Tea Lounge"}
+                                    title={!isDropActive ? "View Echoes" : "Open Tea Lounge"}
                                 >
                                     <Zap className={cn("w-4 h-4", isDropActive ? "fill-current" : "")} />
                                     <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">
-                                        {isDropActive ? "Tea Lounge" : "Evaporated"}
+                                        {isDropActive ? "Tea Lounge" : "Echoed Lounge"}
                                     </span>
                                     {(post as any).message_count > 0 && (
                                         <span className="absolute -top-1 -right-1 bg-green-400 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full border border-black/20 shadow-lg">
@@ -376,6 +380,7 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                         deviceId={localStorage.getItem('device_id') || ''}
                         userHandle={localStorage.getItem('user_handle') || undefined}
                         userAvatar={localStorage.getItem('user_avatar') || undefined}
+                        isDropActive={isDropActive}
                         onClose={() => setIsChatOpen(false)}
                     />
                 )}

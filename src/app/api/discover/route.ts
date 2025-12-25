@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
                 SELECT tag, COUNT(*) as count 
                 FROM confessions 
                 WHERE tag IS NOT NULL 
+                    AND status = 'LIVE'
+                    AND (expires_at IS NULL OR expires_at > NOW())
                 GROUP BY tag 
                 ORDER BY count DESC 
                 LIMIT 10

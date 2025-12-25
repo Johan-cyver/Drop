@@ -1,25 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
     try {
-        if (!process.env.POSTGRES_URL) {
-            return NextResponse.json({ error: 'Database not connected (POSTGRES_URL missing)' }, { status: 500 });
-        }
-
         const body = await req.json();
         const { confession_id, content, device_id, parent_id } = body;
 
         if (!confession_id || !content || !device_id) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+            return NextResponse.json({ error: 'Missing required fields: confession_id, content, or device_id' }, { status: 400 });
         }
 
         // 1. Check if user is banned
-        const userRes = await sql`
-            SELECT shadow_banned FROM users WHERE device_id = ${device_id}
-        `;
+        const userRes = await query(`
+            SELECT shadow_banned FROM users WHERE device_id = $1
+        `, [device_id]);
         const user = userRes.rows[0];
 
         if (user?.shadow_banned) {
@@ -27,20 +23,18 @@ export async function POST(req: NextRequest) {
         }
 
         // 2. Insert Comment
-        const commentRes = await sql`
+        const commentRes = await query(`
             INSERT INTO comments (confession_id, device_id, content, parent_id)
-            VALUES (${confession_id}, ${device_id}, ${content}, ${parent_id || null})
+            VALUES ($1, $2, $3, $4)
             RETURNING *
-        `;
+        `, [confession_id, device_id, content, parent_id || null]);
 
         const newComment = commentRes.rows[0];
 
-        // 3. (Optional) Could trigger a notification here in the future
-
         return NextResponse.json(newComment);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Post Comment Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
     }
 }

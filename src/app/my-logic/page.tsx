@@ -11,6 +11,7 @@ import ComposeModal from '@/components/ComposeModal';
 import { User, Award, Calendar, GraduationCap, Edit3, Camera, Sparkles, X, Upload } from 'lucide-react';
 import { formatTime, cn } from '@/lib/utils';
 import { showToast } from '@/components/NotificationToast';
+import FeedbackModal from '@/components/FeedbackModal';
 
 export default function MyLogicPage() {
     const [activeTab, setActiveTab] = useState<'created' | 'saved'>('created');
@@ -22,6 +23,7 @@ export default function MyLogicPage() {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isComposeOpen, setIsComposeOpen] = useState(false);
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
     const [deviceId, setDeviceId] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
@@ -87,7 +89,10 @@ export default function MyLogicPage() {
     return (
         <div className="h-full w-full max-w-7xl mx-auto flex lg:grid lg:grid-cols-12 gap-8 relative z-10 sm:px-6 lg:px-8">
             <AmbientBackground />
-            <Navbar onCompose={() => setIsComposeOpen(true)} />
+            <Navbar
+                onCompose={() => setIsComposeOpen(true)}
+                onFeedback={() => setIsFeedbackOpen(true)}
+            />
 
             <main className="flex-1 lg:col-span-6 w-full max-w-[480px] lg:max-w-none mx-auto flex flex-col h-full bg-dark-950/50 lg:bg-transparent lg:border-x lg:border-white/5 relative shadow-2xl lg:shadow-none min-h-screen">
 
@@ -221,7 +226,10 @@ export default function MyLogicPage() {
             </main>
 
             <Widgets />
-            <MobileDock onCompose={() => setIsComposeOpen(true)} />
+            <MobileDock
+                onCompose={() => setIsComposeOpen(true)}
+                onFeedback={() => setIsFeedbackOpen(true)}
+            />
             <ComposeModal
                 isOpen={isComposeOpen}
                 onClose={() => setIsComposeOpen(false)}
@@ -242,6 +250,12 @@ export default function MyLogicPage() {
                         return { success: false, safety_warning: data.safety_warning };
                     }
                 }}
+                deviceId={deviceId}
+            />
+
+            <FeedbackModal
+                isOpen={isFeedbackOpen}
+                onClose={() => setIsFeedbackOpen(false)}
                 deviceId={deviceId}
             />
 

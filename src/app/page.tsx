@@ -181,7 +181,10 @@ export default function Home() {
 
             <Widgets />
 
-            <MobileDock onCompose={() => setIsComposeOpen(true)} />
+            <MobileDock
+                onCompose={() => setIsComposeOpen(true)}
+                onFeedback={() => setIsFeedbackOpen(true)}
+            />
 
             <ComposeModal
                 isOpen={isComposeOpen}

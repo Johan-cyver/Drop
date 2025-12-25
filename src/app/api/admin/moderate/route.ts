@@ -48,9 +48,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true, message: 'Post permanently deleted' });
         }
 
-        if (action === 'FLAG_POST') {
-            await query(`UPDATE confessions SET status = 'FLAGGED' WHERE id = $1`, [target_id]);
-            return NextResponse.json({ success: true, message: 'Post flagged' });
+        if (action === 'DELETE_COLLEGE') {
+            if (!target_id) return NextResponse.json({ error: 'College ID required' }, { status: 400 });
+            await query(`DELETE FROM colleges WHERE id = $1`, [target_id]);
+            return NextResponse.json({ success: true, message: 'College removed' });
         }
 
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

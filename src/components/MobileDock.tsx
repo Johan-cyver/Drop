@@ -1,13 +1,14 @@
-import { Home, Search, Plus, Bell, User, Zap } from 'lucide-react';
+import { Home, Search, Plus, Bell, User, Zap, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 interface MobileDockProps {
     onCompose: () => void;
+    onFeedback: () => void;
 }
 
-export default function MobileDock({ onCompose }: MobileDockProps) {
+export default function MobileDock({ onCompose, onFeedback }: MobileDockProps) {
     const pathname = usePathname();
 
     const navItems = [
@@ -53,6 +54,13 @@ export default function MobileDock({ onCompose }: MobileDockProps) {
                         <item.icon className="w-6 h-6" />
                     </Link>
                 ))}
+
+                <button
+                    onClick={onFeedback}
+                    className="w-12 h-12 flex items-center justify-center rounded-full text-gray-500 hover:text-white transition-all active:scale-90"
+                >
+                    <MessageSquare className="w-6 h-6" />
+                </button>
             </div>
         </div>
     );

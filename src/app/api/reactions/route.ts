@@ -30,6 +30,14 @@ export async function POST(req: NextRequest) {
                 INSERT INTO reactions (confession_id, device_id, emoji)
                 VALUES ($1, $2, $3)
             `, [confession_id, device_id, emoji]);
+
+            // Award "Impact Coin" to author
+            const authorRes = await query(`SELECT device_id FROM confessions WHERE id = $1`, [confession_id]);
+            const authorId = authorRes.rows[0]?.device_id;
+            if (authorId && authorId !== device_id) {
+                await query(`UPDATE users SET coins = coins + 1 WHERE device_id = $1`, [authorId]);
+            }
+
             return NextResponse.json({ success: true, active: true });
         }
 

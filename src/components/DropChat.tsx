@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, User } from 'lucide-react';
+import { X, Send, User, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Message {
@@ -22,10 +22,11 @@ interface DropChatProps {
     deviceId: string;
     userHandle?: string;
     userAvatar?: string;
+    isDropActive?: boolean;
     onClose: () => void;
 }
 
-export default function DropChat({ confessionId, deviceId, userHandle, userAvatar, onClose }: DropChatProps) {
+export default function DropChat({ confessionId, deviceId, userHandle, userAvatar, isDropActive = true, onClose }: DropChatProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(true);
@@ -192,42 +193,54 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSend} className="p-6 bg-black/40 border-t border-white/5">
-                {replyTo && (
-                    <div className="mb-3 flex items-center justify-between px-4 py-2 bg-brand-glow/10 border border-brand-glow/20 rounded-xl">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-brand-glow">
-                            Replying to {replyTo.handle || 'Anonymous'}
-                        </span>
-                        <button type="button" onClick={() => setReplyTo(null)} className="text-brand-glow hover:text-white">
-                            <X className="w-4 h-4" />
-                        </button>
+            {isDropActive ? (
+                <form onSubmit={handleSend} className="p-6 bg-black/40 border-t border-white/5">
+                    {replyTo && (
+                        <div className="mb-3 flex items-center justify-between px-4 py-2 bg-brand-glow/10 border border-brand-glow/20 rounded-xl">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-brand-glow">
+                                Replying to {replyTo.handle || 'Anonymous'}
+                            </span>
+                            <button type="button" onClick={() => setReplyTo(null)} className="text-brand-glow hover:text-white">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-brand-glow to-indigo-500 rounded-2xl blur opacity-20 group-focus-within:opacity-100 transition duration-500" />
+                        <div className="relative bg-dark-900 rounded-2xl p-2 flex items-center gap-2 border border-white/10">
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder={replyTo ? `Replying to ${replyTo.handle}...` : "Roast the logic..."}
+                                className="flex-1 bg-transparent border-none focus:ring-0 text-white placeholder-gray-600 text-sm px-4 py-3"
+                            />
+                            <button
+                                type="submit"
+                                disabled={!input.trim()}
+                                className={cn(
+                                    "p-3 rounded-xl transition-all active:scale-95 shadow-xl",
+                                    input.trim()
+                                        ? "bg-brand-glow text-white"
+                                        : "bg-white/5 text-gray-700"
+                                )}
+                            >
+                                <Send className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
-                )}
-                <div className="relative group">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-brand-glow to-indigo-500 rounded-2xl blur opacity-20 group-focus-within:opacity-100 transition duration-500" />
-                    <div className="relative bg-dark-900 rounded-2xl p-2 flex items-center gap-2 border border-white/10">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder={replyTo ? `Replying to ${replyTo.handle}...` : "Roast the logic..."}
-                            className="flex-1 bg-transparent border-none focus:ring-0 text-white placeholder-gray-600 text-sm px-4 py-3"
-                        />
-                        <button
-                            type="submit"
-                            disabled={!input.trim()}
-                            className={cn(
-                                "p-3 rounded-xl transition-all active:scale-95 shadow-xl",
-                                input.trim()
-                                    ? "bg-brand-glow text-white"
-                                    : "bg-white/5 text-gray-700"
-                            )}
-                        >
-                            <Send className="w-5 h-5" />
-                        </button>
+                </form>
+            ) : (
+                <div className="p-10 bg-black/40 border-t border-white/5 text-center flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                        <Lock className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-bold text-white mb-1">Tea Lounge Evaporated</p>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">This lounge is now read-only.</p>
                     </div>
                 </div>
-            </form>
+            )}
         </motion.div>
     );
 }

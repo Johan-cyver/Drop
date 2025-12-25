@@ -37,6 +37,15 @@ export async function POST(req: NextRequest) {
             WHERE id = $3
         `, [ups, downs, confession_id]);
 
+        // 3. Award "Impact Coins" to author if it's an upvote (value=1)
+        if (value === 1) {
+            const authorRes = await query(`SELECT device_id FROM confessions WHERE id = $1`, [confession_id]);
+            const authorId = authorRes.rows[0]?.device_id;
+            if (authorId && authorId !== device_id) {
+                await query(`UPDATE users SET coins = coins + 2 WHERE device_id = $1`, [authorId]);
+            }
+        }
+
         return NextResponse.json({ success: true, upvotes: ups, downvotes: downs });
 
     } catch (error: any) {

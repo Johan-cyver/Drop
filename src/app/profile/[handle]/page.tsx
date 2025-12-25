@@ -6,9 +6,10 @@ import AmbientBackground from '@/components/AmbientBackground';
 import Navbar from '@/components/Navbar';
 import ConfessionCard, { Post } from '@/components/ConfessionCard';
 import MobileDock from '@/components/MobileDock';
-import { User, MapPin, Calendar, ArrowLeft } from 'lucide-react';
+import { User, MapPin, Calendar, ArrowLeft, MessageSquare } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 import ComposeModal from '@/components/ComposeModal';
+import FeedbackModal from '@/components/FeedbackModal';
 
 export default function ProfilePage() {
     const params = useParams();
@@ -19,6 +20,7 @@ export default function ProfilePage() {
     const [drops, setDrops] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [isComposeOpen, setIsComposeOpen] = useState(false);
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [deviceId, setDeviceId] = useState('');
 
     useEffect(() => {
@@ -76,7 +78,11 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen w-full relative bg-dark-950 text-white pb-32">
             <AmbientBackground />
-            <Navbar onCompose={() => setIsComposeOpen(true)} />
+            <AmbientBackground />
+            <Navbar
+                onCompose={() => setIsComposeOpen(true)}
+                onFeedback={() => setIsFeedbackOpen(true)}
+            />
 
             <main className="max-w-[480px] mx-auto px-6 pt-10 relative z-10">
                 {/* Header */}
@@ -136,7 +142,10 @@ export default function ProfilePage() {
                 </div>
             </main>
 
-            <MobileDock onCompose={() => setIsComposeOpen(true)} />
+            <MobileDock
+                onCompose={() => setIsComposeOpen(true)}
+                onFeedback={() => setIsFeedbackOpen(true)}
+            />
             <ComposeModal
                 isOpen={isComposeOpen}
                 onClose={() => setIsComposeOpen(false)}
@@ -151,6 +160,12 @@ export default function ProfilePage() {
                         fetchProfile(deviceId);
                     }
                 }}
+                deviceId={deviceId}
+            />
+
+            <FeedbackModal
+                isOpen={isFeedbackOpen}
+                onClose={() => setIsFeedbackOpen(false)}
                 deviceId={deviceId}
             />
         </div>

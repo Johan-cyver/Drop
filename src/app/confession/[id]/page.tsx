@@ -13,12 +13,14 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import CommentSection from '@/components/CommentSection';
 import { showToast } from '@/components/NotificationToast';
+import FeedbackModal from '@/components/FeedbackModal';
 
 export default function SingleConfessionPage({ params }: { params: { id: string } }) {
     const [post, setPost] = useState<Post | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [isComposeOpen, setIsComposeOpen] = useState(false);
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [deviceId, setDeviceId] = useState('');
 
     useEffect(() => {
@@ -76,7 +78,10 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
     return (
         <div className="h-full w-full max-w-7xl mx-auto flex lg:grid lg:grid-cols-12 gap-8 relative z-10 sm:px-6 lg:px-8">
             <AmbientBackground />
-            <Navbar onCompose={() => setIsComposeOpen(true)} />
+            <Navbar
+                onCompose={() => setIsComposeOpen(true)}
+                onFeedback={() => setIsFeedbackOpen(true)}
+            />
 
             {/* Main Content */}
             <main className="flex-1 lg:col-span-6 w-full max-w-[480px] lg:max-w-none mx-auto flex flex-col h-full bg-dark-950/50 lg:bg-transparent lg:border-x lg:border-white/5 relative shadow-2xl lg:shadow-none min-h-screen">
@@ -139,7 +144,10 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
             )}
 
             <Widgets />
-            <MobileDock onCompose={() => setIsComposeOpen(true)} />
+            <MobileDock
+                onCompose={() => setIsComposeOpen(true)}
+                onFeedback={() => setIsFeedbackOpen(true)}
+            />
             <ComposeModal
                 isOpen={isComposeOpen}
                 onClose={() => setIsComposeOpen(false)}
@@ -167,6 +175,12 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
                         return { success: false, safety_warning: data.safety_warning };
                     }
                 }}
+                deviceId={deviceId}
+            />
+
+            <FeedbackModal
+                isOpen={isFeedbackOpen}
+                onClose={() => setIsFeedbackOpen(false)}
                 deviceId={deviceId}
             />
         </div>

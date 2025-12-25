@@ -6,11 +6,14 @@ import Navbar from '@/components/Navbar';
 import Widgets from '@/components/Widgets';
 import MobileDock from '@/components/MobileDock';
 import ComposeModal from '@/components/ComposeModal';
-import { Bell, Heart, MessageCircle, Zap } from 'lucide-react';
+import { Bell, Heart, MessageCircle, Zap, MessageSquare } from 'lucide-react';
 import { showToast } from '@/components/NotificationToast';
+import FeedbackModal from '@/components/FeedbackModal';
 
 export default function NotificationsPage() {
     const [isComposeOpen, setIsComposeOpen] = useState(false);
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+    const [deviceId, setDeviceId] = useState('');
 
     const [notifications, setNotifications] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -18,6 +21,7 @@ export default function NotificationsPage() {
     useEffect(() => {
         const did = localStorage.getItem('device_id');
         if (did) {
+            setDeviceId(did);
             fetch(`/api/activity?device_id=${did}`)
                 .then(res => res.json())
                 .then(data => {
@@ -33,7 +37,10 @@ export default function NotificationsPage() {
     return (
         <div className="h-full w-full max-w-7xl mx-auto flex lg:grid lg:grid-cols-12 gap-8 relative z-10 sm:px-6 lg:px-8">
             <AmbientBackground />
-            <Navbar onCompose={() => { }} />
+            <Navbar
+                onCompose={() => setIsComposeOpen(true)}
+                onFeedback={() => setIsFeedbackOpen(true)}
+            />
 
             <main className="flex-1 lg:col-span-6 w-full max-w-[480px] lg:max-w-none mx-auto flex flex-col h-full bg-dark-950/50 lg:bg-transparent lg:border-x lg:border-white/5 relative shadow-2xl lg:shadow-none min-h-screen">
 
@@ -71,7 +78,10 @@ export default function NotificationsPage() {
             </main>
 
             <Widgets />
-            <MobileDock onCompose={() => setIsComposeOpen(true)} />
+            <MobileDock
+                onCompose={() => setIsComposeOpen(true)}
+                onFeedback={() => setIsFeedbackOpen(true)}
+            />
             <ComposeModal
                 isOpen={isComposeOpen}
                 onClose={() => setIsComposeOpen(false)}
@@ -93,7 +103,13 @@ export default function NotificationsPage() {
                         return { success: false, safety_warning: data.safety_warning };
                     }
                 }}
-                deviceId={""}
+                deviceId={deviceId || ""}
+            />
+
+            <FeedbackModal
+                isOpen={isFeedbackOpen}
+                onClose={() => setIsFeedbackOpen(false)}
+                deviceId={deviceId || ""}
             />
         </div>
     );

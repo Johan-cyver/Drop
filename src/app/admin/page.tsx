@@ -308,6 +308,17 @@ export default function AdminPage() {
                                                 <div className="text-2xl font-black text-brand-glow">{college.user_count}</div>
                                                 <div className="text-[9px] text-gray-600 uppercase tracking-widest">Members</div>
                                             </div>
+                                            <button
+                                                onClick={() => {
+                                                    if (confirm(`ARE YOU SURE? This will remove the ${college.name} server permanently.`)) {
+                                                        handleModerate('DELETE_COLLEGE', college.id);
+                                                    }
+                                                }}
+                                                className="p-2 hover:bg-red-500/20 text-red-500 rounded-lg transition"
+                                                title="Delete Server"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
                                         </div>
                                     </div>
                                     {collegeUsers.length > 0 && (
