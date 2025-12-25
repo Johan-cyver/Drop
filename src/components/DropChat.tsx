@@ -66,7 +66,7 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
         const interval = setInterval(() => {
             fetchMessages();
             fetchOnlineCount();
-        }, 3000); // Poll every 3 seconds
+        }, 1500); // Poll every 1.5 seconds for real-time feel
         return () => clearInterval(interval);
     }, [confessionId]);
 

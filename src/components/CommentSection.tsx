@@ -39,7 +39,7 @@ export default function CommentSection({ confessionId, comments, deviceId, onCom
                 body: JSON.stringify({
                     confession_id: confessionId,
                     content: newComment.trim(),
-                    device_id: deviceId,
+                    device_id: deviceId || localStorage.getItem('device_id'),
                     parent_id: replyTo?.id
                 })
             });

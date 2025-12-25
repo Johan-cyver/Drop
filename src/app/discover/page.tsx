@@ -32,11 +32,20 @@ function DiscoverContent() {
             localStorage.setItem('device_id', did);
         }
         setDeviceId(did);
-        fetchTrending(did); // Renamed to fetchDiscovery in the instruction, but keeping original name for now as fetchDiscovery is not defined.
+        fetchTrending(did);
         fetchTags();
+
         if (initialQuery) {
             handleSearch(initialQuery);
         }
+
+        // Keep content fresh
+        const interval = setInterval(() => {
+            fetchTrending(did!);
+            fetchTags();
+        }, 60000); // Polling every 60s for trending content
+
+        return () => clearInterval(interval);
     }, []);
 
     const fetchTags = async () => {

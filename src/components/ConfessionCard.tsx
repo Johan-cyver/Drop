@@ -42,7 +42,7 @@ interface ConfessionCardProps {
 export default function ConfessionCard({ post, onVote, hideIdentity = false }: ConfessionCardProps) {
     const voteStatus = post.myVote || 0;
     const isTrending = (post.hotScore && post.hotScore > 10) || post.upvotes >= 10;
-    const isDropActive = post.isDropActive || false;
+
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -93,6 +93,16 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
 
         return () => clearInterval(interval);
     }, []);
+
+    const isDropActiveClient = useMemo(() => {
+        if (!post.drop_active_at || !post.expires_at) return post.isDropActive || false;
+        const now = currentTime;
+        const start = new Date(post.drop_active_at).getTime();
+        const end = new Date(post.expires_at).getTime();
+        return now >= start && now < end;
+    }, [post.drop_active_at, post.expires_at, post.isDropActive, currentTime]);
+
+    const isDropActive = isDropActiveClient;
 
     const timeAgo = useMemo(() => {
         const date = new Date(post.created_at);

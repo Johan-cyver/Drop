@@ -67,8 +67,11 @@ export async function GET(req: NextRequest) {
                 WITH ActivityMetrics AS (
                     SELECT 
                         c.*,
-                        COALESCE((SELECT COUNT(*) FROM reactions WHERE confession_id = c.id), 0) * 1 +
-                        COALESCE((SELECT COUNT(*) FROM messages WHERE confession_id = c.id), 0) * 2 as activity_score,
+                        (
+                            COALESCE((SELECT COUNT(*) FROM reactions WHERE confession_id = c.id), 0) * 1 +
+                            COALESCE((SELECT COUNT(*) FROM messages WHERE confession_id = c.id), 0) * 2 +
+                            (c.upvotes - c.downvotes) * 2
+                        ) as activity_score,
                         u.handle,
                         u.avatar,
                         (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
@@ -86,8 +89,8 @@ export async function GET(req: NextRequest) {
                 )
             `;
 
-            const topOpen = await query(`${baseQuery} SELECT * FROM ActivityMetrics WHERE is_open = true AND activity_score > 2 ORDER BY activity_score DESC LIMIT 2`, [userCollege, deviceId || '']);
-            const topAnon = await query(`${baseQuery} SELECT * FROM ActivityMetrics WHERE is_open = false AND activity_score > 2 ORDER BY activity_score DESC LIMIT 2`, [userCollege, deviceId || '']);
+            const topOpen = await query(`${baseQuery} SELECT * FROM ActivityMetrics WHERE is_open = true AND activity_score > 0 ORDER BY activity_score DESC LIMIT 5`, [userCollege, deviceId || '']);
+            const topAnon = await query(`${baseQuery} SELECT * FROM ActivityMetrics WHERE is_open = false AND activity_score > 0 ORDER BY activity_score DESC LIMIT 5`, [userCollege, deviceId || '']);
 
             return NextResponse.json({
                 trending: {
