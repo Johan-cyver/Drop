@@ -319,22 +319,13 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                                 e.preventDefault();
                                 setIsChatOpen(true);
                             }}
-                            className={cn(
-                                "h-12 px-4 flex items-center justify-center rounded-2xl border transition-all gap-2 relative group-hover:border-brand-glow/30",
-                                isDropActive
-                                    ? "bg-brand-glow/10 text-brand-glow hover:bg-brand-glow hover:text-white border-brand-glow/20"
-                                    : "bg-gray-800/50 text-gray-500 border-white/5"
-                            )}
+                            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-brand-glow border border-white/5 transition-all flex flex-col items-center justify-center gap-0.5 relative"
                             title={!isDropActive ? "View Echoes" : "Open Tea Lounge"}
                         >
                             <Zap className={cn("w-4 h-4", isDropActive ? "fill-current" : "")} />
-                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
-                                {isDropActive ? "Lounge" : "Echoed"}
-                            </span>
-                            {(post as any).message_count > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-green-400 text-black text-[9px] font-black px-1.5 py-0.5 rounded-full border border-black/20 shadow-lg">
-                                    {(post as any).message_count}
-                                </span>
+                            <span className="text-[10px] font-black">{(post as any).message_count || 0}</span>
+                            {!isDropActive && (
+                                <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-black" />
                             )}
                         </button>
 
