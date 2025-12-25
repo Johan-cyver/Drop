@@ -9,6 +9,13 @@ export async function POST(req: NextRequest) {
         const { confession_id, content, device_id, parent_id } = body;
 
         if (!confession_id || !content || !device_id) {
+            console.error('Comment Field Validation Failed:', {
+                has_confession_id: !!confession_id,
+                has_content: !!content,
+                has_device_id: !!device_id,
+                confession_id,
+                device_id
+            });
             return NextResponse.json({ error: 'Missing required fields: confession_id, content, or device_id' }, { status: 400 });
         }
 

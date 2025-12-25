@@ -32,6 +32,12 @@ export default function CommentSection({ confessionId, comments, deviceId, onCom
         if (!newComment.trim() || isSubmitting) return;
 
         setIsSubmitting(true);
+        let did = deviceId || localStorage.getItem('device_id');
+        if (!did) {
+            did = crypto.randomUUID();
+            localStorage.setItem('device_id', did);
+        }
+
         try {
             const res = await fetch('/api/comments', {
                 method: 'POST',
@@ -39,7 +45,7 @@ export default function CommentSection({ confessionId, comments, deviceId, onCom
                 body: JSON.stringify({
                     confession_id: confessionId,
                     content: newComment.trim(),
-                    device_id: deviceId || localStorage.getItem('device_id'),
+                    device_id: did,
                     parent_id: replyTo?.id
                 })
             });

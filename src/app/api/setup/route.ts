@@ -198,12 +198,17 @@ export async function GET(req: NextRequest) {
             );
         `);
 
-        // Messages Migrations
-        try {
-            await query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to_id UUID REFERENCES messages(id) ON DELETE SET NULL`);
-        } catch (e) {
-            console.log("Messages migration error:", e);
-        }
+        // 8. Reward Tracking Table (Prevent abuse)
+        await query(`
+            CREATE TABLE IF NOT EXISTS reward_tracking (
+                id SERIAL PRIMARY KEY,
+                confession_id TEXT,
+                device_id TEXT,
+                action_type TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(confession_id, device_id, action_type)
+            );
+        `);
 
         return NextResponse.json({
             success: true,
