@@ -15,6 +15,12 @@ const getPostgresUrl = () => {
 const getPool = () => {
     if (pool) return pool;
     const url = getPostgresUrl();
+
+    console.log('DB Connection Check:', {
+        hasUrl: !!url,
+        envKeys: Object.keys(process.env).filter(key => key.includes('POSTGRES') || key.includes('DATABASE'))
+    });
+
     if (!url) throw new Error('DATABASE_NOT_CONNECTED');
 
     pool = createPool({ connectionString: url });
