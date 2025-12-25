@@ -29,13 +29,22 @@ export async function GET(req: NextRequest) {
             WHERE device_id = ${deviceId} 
             ORDER BY created_at DESC
         `;
-        const myPosts = myPostsRes.rows.map(row => ({
-            ...row,
-            is_open: !!row.is_open,
-            is_shadow: !!row.is_shadow,
-            upvotes: parseInt(row.upvotes || '0'),
-            downvotes: parseInt(row.downvotes || '0')
-        }));
+        const now = new Date();
+        const myPosts = myPostsRes.rows.map(row => {
+            const dropActiveAt = row.drop_active_at ? new Date(row.drop_active_at) : null;
+            const expiresAt = row.expires_at ? new Date(row.expires_at) : null;
+
+            return {
+                ...row,
+                is_open: !!row.is_open,
+                is_shadow: !!row.is_shadow,
+                upvotes: parseInt(row.upvotes || '0'),
+                downvotes: parseInt(row.downvotes || '0'),
+                isDropActive: dropActiveAt && expiresAt
+                    ? (now >= dropActiveAt && now < expiresAt)
+                    : false
+            };
+        });
 
         // 3. Simple Stats
         const totalUpvotes = myPosts.reduce((acc, p) => acc + (p.upvotes || 0), 0);

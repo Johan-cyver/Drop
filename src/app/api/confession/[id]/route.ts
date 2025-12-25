@@ -53,6 +53,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         `;
 
         // Standardize types
+        const now = new Date();
+        const dropActiveAt = post.drop_active_at ? new Date(post.drop_active_at) : null;
+        const expiresAt = post.expires_at ? new Date(post.expires_at) : null;
+
         const formattedPost = {
             ...post,
             myVote: parseInt(post.myvote || '0'),
@@ -61,6 +65,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             is_shadow: !!post.is_shadow,
             is_open: !!post.is_open,
             unlock_votes: parseInt(post.unlock_votes || '0'),
+            isDropActive: dropActiveAt && expiresAt
+                ? (now >= dropActiveAt && now < expiresAt)
+                : false,
             comments: commentsRes.rows,
             reactions: reactionsRes.rows.map(r => ({ emoji: r.emoji, count: parseInt(r.count), active: !!r.active }))
         };

@@ -129,6 +129,10 @@ export async function GET(req: NextRequest) {
 }
 
 function standardizePost(row: any) {
+    const now = new Date();
+    const dropActiveAt = row.drop_active_at ? new Date(row.drop_active_at) : null;
+    const expiresAt = row.expires_at ? new Date(row.expires_at) : null;
+
     return {
         ...row,
         myVote: parseInt(row.myvote || '0'),
@@ -139,6 +143,9 @@ function standardizePost(row: any) {
         reaction_count: parseInt(row.reaction_count || '0'),
         activity_score: parseInt(row.activity_score || '0'),
         is_open: !!row.is_open,
-        is_shadow: !!row.is_shadow
+        is_shadow: !!row.is_shadow,
+        isDropActive: dropActiveAt && expiresAt
+            ? (now >= dropActiveAt && now < expiresAt)
+            : false
     };
 }

@@ -2,7 +2,7 @@
 
 // Temporal System
 export const DROP_LIFESPAN = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-export const DROP_ACTIVE_WINDOW = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+export const DROP_ACTIVE_WINDOW = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 export const POST_COOLDOWN = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 
 // Next Drop System (Fixed times: 12am, 6am, 12pm, 6pm)

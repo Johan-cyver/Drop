@@ -40,13 +40,22 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
             LIMIT 100
         `;
 
-        const drops = postsRes.rows.map(row => ({
-            ...row,
-            myVote: parseInt(row.myvote || '0'),
-            upvotes: parseInt(row.upvotes || '0'),
-            downvotes: parseInt(row.downvotes || '0'),
-            comment_count: parseInt(row.comment_count || '0')
-        }));
+        const now = new Date();
+        const drops = postsRes.rows.map(row => {
+            const dropActiveAt = row.drop_active_at ? new Date(row.drop_active_at) : null;
+            const expiresAt = row.expires_at ? new Date(row.expires_at) : null;
+
+            return {
+                ...row,
+                myVote: parseInt(row.myvote || '0'),
+                upvotes: parseInt(row.upvotes || '0'),
+                downvotes: parseInt(row.downvotes || '0'),
+                comment_count: parseInt(row.comment_count || '0'),
+                isDropActive: dropActiveAt && expiresAt
+                    ? (now >= dropActiveAt && now < expiresAt)
+                    : false
+            };
+        });
 
         return NextResponse.json({
             user,

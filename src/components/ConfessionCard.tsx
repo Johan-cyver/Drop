@@ -284,17 +284,6 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                                 <button
                                     onClick={(e) => {
                                         e.preventDefault();
-                                        // Check for expiration
-                                        if (!isDropActive) {
-                                            // Check if saved in echoes
-                                            const saved = JSON.parse(localStorage.getItem('my_echoes') || '[]');
-                                            const isSaved = saved.some((p: Post) => p.id === post.id);
-
-                                            if (!isSaved) {
-                                                showToast('This Tea Lounge has evaporated!', 'error');
-                                                return;
-                                            }
-                                        }
                                         setIsChatOpen(true);
                                     }}
                                     className={cn(
