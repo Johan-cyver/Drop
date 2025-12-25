@@ -24,9 +24,13 @@ export default function SingleConfessionPage({ params }: { params: { id: string 
     const [deviceId, setDeviceId] = useState('');
 
     useEffect(() => {
-        const did = localStorage.getItem('device_id');
-        if (did) setDeviceId(did);
-        fetchPost(did || undefined);
+        let did = localStorage.getItem('device_id');
+        if (!did) {
+            did = crypto.randomUUID();
+            localStorage.setItem('device_id', did);
+        }
+        setDeviceId(did);
+        fetchPost(did);
     }, [params.id]);
 
     const fetchPost = async (did?: string) => {

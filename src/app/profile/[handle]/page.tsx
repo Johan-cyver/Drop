@@ -24,7 +24,11 @@ export default function ProfilePage() {
     const [deviceId, setDeviceId] = useState('');
 
     useEffect(() => {
-        const did = localStorage.getItem('device_id') || '';
+        let did = localStorage.getItem('device_id');
+        if (!did) {
+            did = crypto.randomUUID();
+            localStorage.setItem('device_id', did);
+        }
         setDeviceId(did);
         fetchProfile(did);
     }, [handle]);

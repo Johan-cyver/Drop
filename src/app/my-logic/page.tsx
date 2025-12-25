@@ -31,8 +31,12 @@ export default function MyLogicPage() {
     const AVATARS = ['👻', '👽', '💀', '🤖', '👾', '🦊', '🌚', '🧛', '🧙', '🥷'];
 
     useEffect(() => {
-        const did = localStorage.getItem('device_id');
-        if (did) setDeviceId(did);
+        let did = localStorage.getItem('device_id');
+        if (!did) {
+            did = crypto.randomUUID();
+            localStorage.setItem('device_id', did);
+        }
+        setDeviceId(did);
         fetchProfile(did);
 
         // Load Saved

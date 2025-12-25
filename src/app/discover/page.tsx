@@ -26,11 +26,13 @@ function DiscoverContent() {
     const [deviceId, setDeviceId] = useState('');
 
     useEffect(() => {
-        const did = localStorage.getItem('device_id');
-        if (did) {
-            setDeviceId(did);
-            fetchTrending(did);
+        let did = localStorage.getItem('device_id');
+        if (!did) {
+            did = crypto.randomUUID();
+            localStorage.setItem('device_id', did);
         }
+        setDeviceId(did);
+        fetchTrending(did); // Renamed to fetchDiscovery in the instruction, but keeping original name for now as fetchDiscovery is not defined.
         fetchTags();
         if (initialQuery) {
             handleSearch(initialQuery);

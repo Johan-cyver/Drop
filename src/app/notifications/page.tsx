@@ -18,20 +18,24 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchNotifications = (did: string) => {
+        fetch(`/api/activity?device_id=${did}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.notifications) setNotifications(data.notifications);
+            })
+            .catch(e => console.error(e))
+            .finally(() => setLoading(false));
+    };
+
     useEffect(() => {
-        const did = localStorage.getItem('device_id');
-        if (did) {
-            setDeviceId(did);
-            fetch(`/api/activity?device_id=${did}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.notifications) setNotifications(data.notifications);
-                })
-                .catch(e => console.error(e))
-                .finally(() => setLoading(false));
-        } else {
-            setLoading(false);
+        let did = localStorage.getItem('device_id');
+        if (!did) {
+            did = crypto.randomUUID();
+            localStorage.setItem('device_id', did);
         }
+        setDeviceId(did);
+        fetchNotifications(did);
     }, []);
 
     return (
