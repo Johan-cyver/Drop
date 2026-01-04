@@ -11,6 +11,7 @@ import ComposeModal from '@/components/ComposeModal';
 import FeedbackModal from '@/components/FeedbackModal';
 import { Post } from '@/components/ConfessionCard';
 import { showToast } from '@/components/NotificationToast';
+import GuideModal from '@/components/GuideModal';
 
 export default function Home() {
     const [posts, setPosts] = useState<Post[]>([]);
@@ -19,6 +20,7 @@ export default function Home() {
     const [deviceId, setDeviceId] = useState('');
     const [hotCount, setHotCount] = useState(0);
     const [userCollegeId, setUserCollegeId] = useState<string | null>(null);
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
 
     const router = useRouter();
 
@@ -37,6 +39,13 @@ export default function Home() {
             if (user && user.college_id) {
                 setUserCollegeId(user.college_id);
                 fetchFeed(did, user.college_id);
+
+                // Auto Onboarding Check
+                const hasSeenGuide = localStorage.getItem('has_seen_guide');
+                if (!hasSeenGuide) {
+                    setTimeout(() => setIsGuideOpen(true), 2000); // 2s delay for premium feel
+                    localStorage.setItem('has_seen_guide', 'true');
+                }
             } else {
                 router.push('/join');
             }
@@ -197,6 +206,11 @@ export default function Home() {
                 isOpen={isFeedbackOpen}
                 onClose={() => setIsFeedbackOpen(false)}
                 deviceId={deviceId}
+            />
+
+            <GuideModal
+                isOpen={isGuideOpen}
+                onClose={() => setIsGuideOpen(false)}
             />
         </div>
     );
