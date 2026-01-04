@@ -12,6 +12,8 @@ import { User, Award, Calendar, GraduationCap, Edit3, Camera, Sparkles, X, Uploa
 import { formatTime, cn } from '@/lib/utils';
 import { showToast } from '@/components/NotificationToast';
 import FeedbackModal from '@/components/FeedbackModal';
+import GuideModal from '@/components/GuideModal';
+import { HelpCircle } from 'lucide-react';
 
 export default function MyLogicPage() {
     const [activeTab, setActiveTab] = useState<'created' | 'saved'>('created');
@@ -27,6 +29,7 @@ export default function MyLogicPage() {
     const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
     const [deviceId, setDeviceId] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
 
     const AVATARS = ['👻', '👽', '💀', '🤖', '👾', '🦊', '🌚', '🧛', '🧙', '🥷'];
 
@@ -142,6 +145,13 @@ export default function MyLogicPage() {
                                     ID: {deviceId.slice(0, 8).toUpperCase()}
                                 </span>
                             </p>
+                            <button
+                                onClick={() => setIsGuideOpen(true)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-glow/10 border border-brand-glow/20 text-brand-glow text-[10px] font-black uppercase tracking-wider hover:bg-brand-glow/20 transition-all mb-4"
+                            >
+                                <HelpCircle className="w-3 h-3" />
+                                Quick Guide
+                            </button>
                             <div className="flex flex-col gap-4 text-xs font-mono text-gray-400">
                                 <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-center p-4 bg-white/5 rounded-2xl border border-white/5 flex-1 hover:bg-white/10 transition-all cursor-default">
@@ -261,6 +271,11 @@ export default function MyLogicPage() {
                 isOpen={isFeedbackOpen}
                 onClose={() => setIsFeedbackOpen(false)}
                 deviceId={deviceId}
+            />
+
+            <GuideModal
+                isOpen={isGuideOpen}
+                onClose={() => setIsGuideOpen(false)}
             />
 
             {/* Avatar Selection Modal */}
