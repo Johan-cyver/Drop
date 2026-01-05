@@ -22,12 +22,13 @@ export interface Post {
     public_id?: string;
     expires_at?: string;
     drop_active_at?: string;
-    is_shadow?: boolean;
-    is_open?: boolean;
-    unlock_votes?: number;
-    unlock_threshold?: number;
+    is_shadow: boolean;
+    is_open: boolean;
+    unlock_threshold: number;
+    unlock_votes: number;
+    tease_content?: string | null;
     comment_count?: number;
-    image?: string; // Data URI for camera photo
+    image?: string | null; // Data URI for camera photo
     color?: string; // Custom card color for sharing
     isDropActive?: boolean;
     reactions?: { emoji: string; count: number; active?: boolean }[];

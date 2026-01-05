@@ -9,7 +9,7 @@ import HelplineModal from './HelplineModal';
 interface ComposeModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (content: string, tag: string, image?: string, options?: { is_shadow?: boolean, is_open?: boolean, unlock_threshold?: number }) => Promise<{ success: boolean; safety_warning?: boolean; error?: string } | void>;
+    onSubmit: (content: string, tag: string, image?: string, options?: { is_shadow?: boolean, is_open?: boolean, unlock_threshold?: number, tease_mode?: string }) => Promise<{ success: boolean; safety_warning?: boolean; error?: string } | void>;
     deviceId: string;
 }
 
@@ -24,6 +24,7 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
     const [isShadow, setIsShadow] = useState(false);
     const [isOpenStatus, setIsOpenStatus] = useState(false);
     const [unlockThreshold, setUnlockThreshold] = useState(5);
+    const [teaseMode, setTeaseMode] = useState('none'); // none, 3_words, 1_sentence
 
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -79,7 +80,8 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
             const options = {
                 is_shadow: isShadow,
                 is_open: isOpenStatus,
-                unlock_threshold: isShadow ? unlockThreshold : undefined, // Only send if shadow
+                unlock_threshold: isShadow ? unlockThreshold : undefined,
+                tease_mode: isShadow ? teaseMode : undefined,
             };
 
             const result = await onSubmit(content, '#General', image || undefined, options);
@@ -205,6 +207,44 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                                 <span className="text-[10px] font-black uppercase tracking-widest">Use Identity</span>
                             </button>
                         </div>
+
+                        {/* Shadow Tease Options (Only if Shadow is active) */}
+                        <AnimatePresence>
+                            {isShadow && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="bg-white/5 border border-white/5 rounded-[2rem] p-4 space-y-3">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-2 flex items-center gap-2">
+                                            <Zap className="w-3 h-3 text-brand-glow" /> Shadow Tease (The Hook)
+                                        </p>
+                                        <div className="flex gap-2">
+                                            {[
+                                                { id: 'none', label: 'Blur All' },
+                                                { id: '3_words', label: '3 Words' },
+                                                { id: '1_sentence', label: '1st Sentence' }
+                                            ].map((mode) => (
+                                                <button
+                                                    key={mode.id}
+                                                    onClick={() => setTeaseMode(mode.id)}
+                                                    className={cn(
+                                                        "flex-1 py-3 rounded-2xl text-[9px] font-bold uppercase transition-all border",
+                                                        teaseMode === mode.id
+                                                            ? "bg-brand-glow text-white border-brand-glow shadow-lg shadow-brand-glow/20"
+                                                            : "bg-white/5 text-gray-400 border-white/5 hover:bg-white/10"
+                                                    )}
+                                                >
+                                                    {mode.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     {/* Posting Reassurance */}

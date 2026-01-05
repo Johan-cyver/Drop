@@ -55,7 +55,8 @@ export async function GET(req: NextRequest) {
             user: user || { device_id: deviceId, risk_score: 0, handle: 'drop_member' },
             stats: {
                 joinedAt: user?.created_at || new Date().toISOString(),
-                karma: Math.max(0, karma),
+                karma: user?.impact || 0,
+                coins: user?.coins || 0,
                 postsCount: myPosts.length
             },
             posts: myPosts

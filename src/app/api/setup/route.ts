@@ -82,6 +82,7 @@ export async function GET(req: NextRequest) {
             await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT`);
             await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS college_id TEXT`);
             await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS coins INTEGER DEFAULT 100`);
+            await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS impact INTEGER DEFAULT 0`);
             await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS shadow_banned BOOLEAN DEFAULT FALSE`);
         } catch (e) {
             console.log("Users migration error:", e);
@@ -122,6 +123,7 @@ export async function GET(req: NextRequest) {
             await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS unlock_threshold INTEGER DEFAULT 5`);
             await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS poll_question TEXT`);
             await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS poll_options TEXT`);
+            await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS tease_content TEXT`);
         } catch (e) {
             console.log("Confessions migration error:", e);
         }

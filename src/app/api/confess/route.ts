@@ -71,27 +71,36 @@ export async function POST(req: NextRequest) {
 
         // 5. Transactional Insert
         const finalThreshold = is_shadow ? (unlock_threshold || 5) : 0;
+        const teaseMode = body.tease_mode || 'none';
+        let teaseContent = null;
+
+        if (is_shadow) {
+            if (teaseMode === '3_words') {
+                teaseContent = content.split(' ').slice(0, 3).join(' ') + '...';
+            } else if (teaseMode === '1_sentence') {
+                teaseContent = content.split(/[.!?]/)[0] + '...';
+            }
+        }
 
         await query(`
             INSERT INTO confessions(
                 id, content, college_id, device_id, status, tag, public_id,
                 expires_at, drop_active_at, created_at, image,
-                is_shadow, is_open, unlock_votes, unlock_threshold
+                is_shadow, is_open, unlock_votes, unlock_threshold, tease_content
             )
             VALUES(
                 $1, $2, $3, $4, $5, $6, $7,
                 $8, $9, $10, $11,
-                $12, $13, 0, $14
+                $12, $13, 0, $14, $15
             )
         `, [
             id, content, user.college_id, device_id, status, tag, publicId,
             expires_at, drop_active_at, now.toISOString(), image || null,
-            is_shadow || false, is_open || false, finalThreshold
+            is_shadow || false, is_open || false, finalThreshold, teaseContent
         ]);
 
-        // 6. Update User Stats
-        await query(`UPDATE users SET last_post_at = $1 WHERE device_id = $2`, [now.toISOString(), device_id]);
-        await query(`UPDATE users SET coins = coins + 10 WHERE device_id = $1`, [device_id]);
+        // 6. Update User Stats (10 Impact = 1000 Coins)
+        await query(`UPDATE users SET last_post_at = $1, impact = impact + 10, coins = coins + 1000 WHERE device_id = $2`, [now.toISOString(), device_id]);
 
         if (status === 'FLAGGED') {
             return NextResponse.json({

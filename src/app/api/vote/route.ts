@@ -37,20 +37,33 @@ export async function POST(req: NextRequest) {
             WHERE id = $3
         `, [ups, downs, confession_id]);
 
-        // 3. Award "Impact Coins" (one-time per user-post pair)
+        // 3. Award "Impact & Coins" (one-time per user-post pair)
         if (value === 1) {
+            // Voter Reward (1 Impact = 100 Coins)
+            const voterAwarded = await query(
+                `SELECT 1 FROM reward_tracking WHERE confession_id = $1 AND device_id = $2 AND action_type = 'VOTE_REWARD'`,
+                [confession_id, device_id]
+            );
+            if (voterAwarded.rows.length === 0) {
+                await query(`UPDATE users SET impact = impact + 1, coins = coins + 100 WHERE device_id = $1`, [device_id]);
+                await query(
+                    `INSERT INTO reward_tracking (confession_id, device_id, action_type) VALUES ($1, $2, 'VOTE_REWARD')`,
+                    [confession_id, device_id]
+                );
+            }
+
+            // Author Reward (5 Impact = 500 Coins)
             const authorRes = await query(`SELECT device_id FROM confessions WHERE id = $1`, [confession_id]);
             const authorId = authorRes.rows[0]?.device_id;
 
             if (authorId && authorId !== device_id) {
-                // Check if already awarded
-                const alreadyAwarded = await query(
+                const authorAwarded = await query(
                     `SELECT 1 FROM reward_tracking WHERE confession_id = $1 AND device_id = $2 AND action_type = 'UPVOTE'`,
                     [confession_id, device_id]
                 );
 
-                if (alreadyAwarded.rows.length === 0) {
-                    await query(`UPDATE users SET coins = coins + 2 WHERE device_id = $1`, [authorId]);
+                if (authorAwarded.rows.length === 0) {
+                    await query(`UPDATE users SET impact = impact + 5, coins = coins + 500 WHERE device_id = $1`, [authorId]);
                     await query(
                         `INSERT INTO reward_tracking (confession_id, device_id, action_type) VALUES ($1, $2, 'UPVOTE')`,
                         [confession_id, device_id]

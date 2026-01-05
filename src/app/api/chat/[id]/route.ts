@@ -61,7 +61,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             const actionType = 'CHAT_PARTICIPATION';
             const alreadyAwarded = await sql`SELECT 1 FROM reward_tracking WHERE confession_id = ${confessionId} AND device_id = ${device_id} AND action_type = ${actionType}`;
             if (alreadyAwarded.rows.length === 0) {
-                await sql`UPDATE users SET coins = coins + 1 WHERE device_id = ${authorId}`;
+                // Participant Reward (2 Impact = 200 Coins)
+                await sql`UPDATE users SET impact = impact + 2, coins = coins + 200 WHERE device_id = ${device_id}`;
                 await sql`INSERT INTO reward_tracking (confession_id, device_id, action_type) VALUES (${confessionId}, ${device_id}, ${actionType})`;
             }
         }
