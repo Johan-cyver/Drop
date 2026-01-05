@@ -50,10 +50,3 @@ export default function Widgets() {
         </aside>
     );
 }
-
-<div className="mt-auto pt-6 text-center border-t border-white/5">
-    <p className="text-[10px] text-gray-600 font-mono tracking-tighter">Safe. Anonymous. Encrypted.</p>
-</div>
-        </aside >
-    );
-}
