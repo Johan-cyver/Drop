@@ -105,8 +105,13 @@ export async function GET(req: NextRequest) {
                 drop_active_at TIMESTAMP,
                 is_shadow BOOLEAN DEFAULT FALSE,
                 is_open BOOLEAN DEFAULT FALSE,
-                unlock_votes INTEGER DEFAULT 5,
+                unlock_votes INTEGER DEFAULT 0,
                 unlock_threshold INTEGER DEFAULT 5,
+                tease_content TEXT,
+                tease_mode TEXT DEFAULT 'none', -- none, 3_words, 1_sentence, custom
+                has_poll BOOLEAN DEFAULT FALSE,
+                poll_options JSONB, -- Array of strings
+                poll_votes JSONB DEFAULT '{}', -- Object mapping index to count
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
@@ -121,8 +126,10 @@ export async function GET(req: NextRequest) {
             await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS is_open BOOLEAN DEFAULT FALSE`);
             await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS unlock_votes INTEGER DEFAULT 5`);
             await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS unlock_threshold INTEGER DEFAULT 5`);
-            await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS poll_question TEXT`);
-            await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS poll_options TEXT`);
+            await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS tease_mode TEXT DEFAULT 'none'`);
+            await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS has_poll BOOLEAN DEFAULT FALSE`);
+            await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS poll_options JSONB`);
+            await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS poll_votes JSONB DEFAULT '{}'`);
             await query(`ALTER TABLE confessions ADD COLUMN IF NOT EXISTS tease_content TEXT`);
         } catch (e) {
             console.log("Confessions migration error:", e);

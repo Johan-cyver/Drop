@@ -72,9 +72,12 @@ export async function POST(req: NextRequest) {
         // 5. Transactional Insert
         const finalThreshold = is_shadow ? (unlock_threshold || 5) : 0;
         const teaseMode = body.tease_mode || 'none';
-        let teaseContent = null;
+        const hasPoll = !!(body.poll_options && body.poll_options.length > 0);
+        const pollOptions = hasPoll ? JSON.stringify(body.poll_options) : null;
 
-        if (is_shadow) {
+        let teaseContent = body.tease_content || null; // Support custom teaser from manual word blurring
+
+        if (is_shadow && !teaseContent) {
             if (teaseMode === '3_words') {
                 teaseContent = content.split(' ').slice(0, 3).join(' ') + '...';
             } else if (teaseMode === '1_sentence') {
@@ -86,17 +89,19 @@ export async function POST(req: NextRequest) {
             INSERT INTO confessions(
                 id, content, college_id, device_id, status, tag, public_id,
                 expires_at, drop_active_at, created_at, image,
-                is_shadow, is_open, unlock_votes, unlock_threshold, tease_content
+                is_shadow, is_open, unlock_votes, unlock_threshold, 
+                tease_content, tease_mode, has_poll, poll_options
             )
             VALUES(
                 $1, $2, $3, $4, $5, $6, $7,
                 $8, $9, $10, $11,
-                $12, $13, 0, $14, $15
+                $12, $13, 0, $14, $15, $16, $17, $18
             )
         `, [
             id, content, user.college_id, device_id, status, tag, publicId,
             expires_at, drop_active_at, now.toISOString(), image || null,
-            is_shadow || false, is_open || false, finalThreshold, teaseContent
+            is_shadow || false, is_open || false, finalThreshold,
+            teaseContent, teaseMode, hasPoll, pollOptions
         ]);
 
         // 6. Update User Stats (10 Impact = 1000 Coins)

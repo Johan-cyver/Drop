@@ -24,7 +24,10 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
     const [isShadow, setIsShadow] = useState(false);
     const [isOpenStatus, setIsOpenStatus] = useState(false);
     const [unlockThreshold, setUnlockThreshold] = useState(5);
-    const [teaseMode, setTeaseMode] = useState('none'); // none, 3_words, 1_sentence
+    const [teaseMode, setTeaseMode] = useState('none'); // none, 3_words, 1_sentence, custom
+    const [blurredWords, setBlurredWords] = useState<number[]>([]); // Indices of words to blur
+    const [isPollOpen, setIsPollOpen] = useState(false);
+    const [pollOptions, setPollOptions] = useState(['', '']);
 
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -82,6 +85,8 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                 is_open: isOpenStatus,
                 unlock_threshold: isShadow ? unlockThreshold : undefined,
                 tease_mode: isShadow ? teaseMode : undefined,
+                tease_content: (isShadow && teaseMode === 'custom') ? getTeaseContent() : undefined,
+                poll_options: isPollOpen ? pollOptions.filter(o => o.trim()) : undefined
             };
 
             const result = await onSubmit(content, '#General', image || undefined, options);
@@ -99,6 +104,22 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
             }
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const getTeaseContent = () => {
+        const words = content.split(/\s+/);
+        return words.map((w, i) => blurredWords.includes(i) ? '_____' : w).join(' ');
+    };
+
+    const toggleWordBlur = (index: number) => {
+        const words = content.split(/\s+/);
+        // Always keep at least one word visible (total words - 1 is max blur)
+        if (!blurredWords.includes(index)) {
+            if (blurredWords.length >= words.length - 1) return;
+            setBlurredWords([...blurredWords, index]);
+        } else {
+            setBlurredWords(blurredWords.filter(i => i !== index));
         }
     };
 
@@ -141,11 +162,44 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                     <textarea
                         ref={inputRef}
                         value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        className="w-full h-48 bg-transparent text-2xl font-bold text-white placeholder-gray-700 resize-none focus:outline-none leading-tight"
+                        onChange={(e) => {
+                            setContent(e.target.value);
+                            setBlurredWords([]); // Reset blur if content changes
+                        }}
+                        className="w-full h-32 bg-transparent text-2xl font-bold text-white placeholder-gray-700 resize-none focus:outline-none leading-tight"
                         placeholder="What's the tea? ☕️"
                         maxLength={280}
                     />
+
+                    {/* Surgical Blur Preview */}
+                    <AnimatePresence>
+                        {isShadow && teaseMode === 'custom' && content.trim() && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                className="mb-6 p-4 rounded-3xl bg-white/5 border border-white/10"
+                            >
+                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-3">Tap words to blur/unblur</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {content.split(/\s+/).map((word, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => toggleWordBlur(i)}
+                                            className={cn(
+                                                "px-3 py-1.5 rounded-xl text-sm font-bold transition-all border",
+                                                blurredWords.includes(i)
+                                                    ? "bg-black text-transparent border-dashed border-white/20 select-none blur-[2px]"
+                                                    : "bg-white/10 text-white border-white/10"
+                                            )}
+                                        >
+                                            {word}
+                                        </button>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     {/* Action Bar */}
                     <div className="flex flex-col gap-6 mt-4">
@@ -225,7 +279,8 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                                             {[
                                                 { id: 'none', label: 'Blur All' },
                                                 { id: '3_words', label: '3 Words' },
-                                                { id: '1_sentence', label: '1st Sentence' }
+                                                { id: '1_sentence', label: '1st Sentence' },
+                                                { id: 'custom', label: 'Surgical' }
                                             ].map((mode) => (
                                                 <button
                                                     key={mode.id}
@@ -245,6 +300,53 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                                 </motion.div>
                             )}
                         </AnimatePresence>
+
+                        {/* Poll Builder */}
+                        <div className="bg-white/5 border border-white/5 rounded-[2rem] p-4">
+                            <button
+                                onClick={() => setIsPollOpen(!isPollOpen)}
+                                className={cn(
+                                    "w-full flex items-center justify-between px-2 transition-all",
+                                    isPollOpen ? "mb-4" : ""
+                                )}
+                            >
+                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Add Poll</span>
+                                <div className={cn("w-4 h-4 rounded-full border-2", isPollOpen ? "bg-brand-glow border-brand-glow" : "border-gray-700")} />
+                            </button>
+
+                            <AnimatePresence>
+                                {isPollOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="space-y-2"
+                                    >
+                                        {pollOptions.map((opt, i) => (
+                                            <input
+                                                key={i}
+                                                value={opt}
+                                                onChange={(e) => {
+                                                    const newOpts = [...pollOptions];
+                                                    newOpts[i] = e.target.value;
+                                                    setPollOptions(newOpts);
+                                                }}
+                                                placeholder={`Option ${i + 1}`}
+                                                className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-3 text-xs font-bold text-white placeholder-gray-700 focus:outline-none focus:border-brand-glow/50"
+                                            />
+                                        ))}
+                                        {pollOptions.length < 4 && (
+                                            <button
+                                                onClick={() => setPollOptions([...pollOptions, ''])}
+                                                className="w-full py-2 rounded-xl border border-dashed border-white/10 text-[9px] font-black uppercase text-gray-500 hover:text-white transition"
+                                            >
+                                                + Add Option
+                                            </button>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
                     </div>
 
                     {/* Posting Reassurance */}
