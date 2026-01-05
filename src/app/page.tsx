@@ -21,6 +21,7 @@ export default function Home() {
     const [hotCount, setHotCount] = useState(0);
     const [userCollegeId, setUserCollegeId] = useState<string | null>(null);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
+    const [globalMegaDrop, setGlobalMegaDrop] = useState<Post | null>(null);
 
     const router = useRouter();
 
@@ -106,6 +107,7 @@ export default function Home() {
             if (data.feed) {
                 setPosts(data.feed);
                 setHotCount(data.meta?.hotCount || 0);
+                setGlobalMegaDrop(data.globalMegaDrop || null);
             }
         } catch (e) {
             console.error(e);
@@ -141,7 +143,7 @@ export default function Home() {
         }
     };
 
-    const handleSubmit = async (content: string, tag: string, image?: string, options?: { is_shadow?: boolean, is_open?: boolean, unlock_threshold?: number }) => {
+    const handleSubmit = async (content: string, tag: string, image?: string, options?: { is_shadow?: boolean, is_open?: boolean, unlock_threshold?: number, tease_mode?: string }) => {
         try {
             const res = await fetch('/api/confess', {
                 method: 'POST',
@@ -152,7 +154,8 @@ export default function Home() {
                     image,
                     is_shadow: options?.is_shadow,
                     is_open: options?.is_open,
-                    unlock_threshold: options?.unlock_threshold
+                    unlock_threshold: options?.unlock_threshold,
+                    tease_mode: options?.tease_mode
                 })
             });
 
@@ -186,6 +189,7 @@ export default function Home() {
                 posts={posts}
                 onVote={handleVote}
                 userCollegeId={userCollegeId}
+                globalMegaDrop={globalMegaDrop}
             />
 
             <Widgets />

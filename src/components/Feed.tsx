@@ -115,47 +115,44 @@ export default function Feed({
                     </div>
                 )}
 
-                {/* Scrollable Area */}
-                <div className="flex-1 overflow-y-auto lg:overflow-visible pb-24 pt-2 lg:pt-8" id="scroller">
-
-                    {/* Desktop Header */}
-                    <div className="hidden lg:flex flex-col gap-4 px-6 mb-6">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-xl font-bold uppercase tracking-widest">CONFESSION</h2>
-                            <div className="flex gap-4">
-                                <button
-                                    onClick={() => setFilter('new')}
-                                    className={`font-bold transition ${filter === 'new' ? 'text-white' : 'text-gray-500'}`}
-                                >
-                                    Fresh
-                                </button>
-                                <button
-                                    onClick={() => setFilter('hot')}
-                                    className={`font-bold transition ${filter === 'hot' ? 'text-brand-glow' : 'text-gray-500'}`}
-                                >
-                                    Burning 🔥
-                                </button>
-                            </div>
+                {/* Desktop Header */}
+                <div className="hidden lg:flex flex-col gap-4 px-6 mb-6">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold uppercase tracking-widest">CONFESSION</h2>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setFilter('new')}
+                                className={`font-bold transition ${filter === 'new' ? 'text-white' : 'text-gray-500'}`}
+                            >
+                                Fresh
+                            </button>
+                            <button
+                                onClick={() => setFilter('hot')}
+                                className={`font-bold transition ${filter === 'hot' ? 'text-brand-glow' : 'text-gray-500'}`}
+                            >
+                                Burning 🔥
+                            </button>
                         </div>
                     </div>
-
-                    {/* Posts Stream */}
-                    <div className="flex flex-col gap-4 px-4 lg:px-6">
-                        {sortedPosts.length > 0 ? (
-                            sortedPosts.map(post => (
-                                <ConfessionCard key={post.id} post={post} onVote={onVote} hideIdentity={hideIdentity} />
-                            ))
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-20 px-10 text-center glass-panel rounded-3xl border border-white/5">
-                                <div className="text-4xl mb-4">🍵</div>
-                                <h3 className="text-lg font-bold text-white mb-2">No tea here yet</h3>
-                                <p className="text-sm text-gray-500">Be the first to drop some spice in this college!</p>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="h-20 lg:h-10" />
                 </div>
+
+                {/* Posts Stream */}
+                <div className="flex flex-col gap-4 px-4 lg:px-6">
+                    {sortedPosts.length > 0 ? (
+                        sortedPosts.map(post => (
+                            <ConfessionCard key={post.id} post={post} onVote={onVote} hideIdentity={hideIdentity} />
+                        ))
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 px-10 text-center glass-panel rounded-3xl border border-white/5">
+                            <div className="text-4xl mb-4">🍵</div>
+                            <h3 className="text-lg font-bold text-white mb-2">No tea here yet</h3>
+                            <p className="text-sm text-gray-500">Be the first to drop some spice in this college!</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="h-20 lg:h-10" />
+            </div>
         </main>
     );
 }
