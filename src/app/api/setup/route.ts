@@ -223,6 +223,17 @@ export async function GET(req: NextRequest) {
             );
         `);
 
+        // 10. The Pulse Table (Real-time activity)
+        await query(`
+            CREATE TABLE IF NOT EXISTS activity_sessions (
+                device_id TEXT PRIMARY KEY,
+                college_id TEXT,
+                viewing_confession_id TEXT,
+                is_typing BOOLEAN DEFAULT FALSE,
+                last_active_at TIMESTAMP DEFAULT NOW()
+            );
+        `);
+
         return NextResponse.json({
             success: true,
             message: shouldReset ? 'Database Wipe and Reset Complete' : 'Database Setup Complete',

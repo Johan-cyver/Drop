@@ -51,10 +51,18 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
 
     const fetchOnlineCount = async () => {
         try {
-            const res = await fetch(`/api/chat/${confessionId}/online?device_id=${deviceId}`);
+            const res = await fetch(`/api/pulse`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    device_id: deviceId,
+                    viewing_confession_id: confessionId,
+                    is_typing: !!input.trim()
+                })
+            });
             if (res.ok) {
                 const data = await res.json();
-                setOnlineCount(data.onlineCount || 0);
+                setOnlineCount(data.post_viewers || 0);
             }
         } catch (e) {
             console.error(e);
@@ -67,7 +75,7 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
         const interval = setInterval(() => {
             fetchMessages();
             fetchOnlineCount();
-        }, 1500); // Poll every 1.5 seconds for real-time feel
+        }, 3000); // 3s polling is safer for Vercel
         return () => clearInterval(interval);
     }, [confessionId]);
 
