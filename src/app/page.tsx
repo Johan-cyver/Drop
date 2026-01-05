@@ -143,7 +143,14 @@ export default function Home() {
         }
     };
 
-    const handleSubmit = async (content: string, tag: string, image?: string, options?: { is_shadow?: boolean, is_open?: boolean, unlock_threshold?: number, tease_mode?: string }) => {
+    const handleSubmit = async (content: string, tag: string, image?: string, options?: {
+        is_shadow?: boolean,
+        is_open?: boolean,
+        unlock_threshold?: number,
+        tease_mode?: string,
+        tease_content?: string,
+        poll_options?: string[]
+    }) => {
         try {
             const res = await fetch('/api/confess', {
                 method: 'POST',

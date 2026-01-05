@@ -9,7 +9,14 @@ import HelplineModal from './HelplineModal';
 interface ComposeModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (content: string, tag: string, image?: string, options?: { is_shadow?: boolean, is_open?: boolean, unlock_threshold?: number, tease_mode?: string }) => Promise<{ success: boolean; safety_warning?: boolean; error?: string } | void>;
+    onSubmit: (content: string, tag: string, image?: string, options?: {
+        is_shadow?: boolean,
+        is_open?: boolean,
+        unlock_threshold?: number,
+        tease_mode?: string,
+        tease_content?: string,
+        poll_options?: string[]
+    }) => Promise<{ success: boolean; safety_warning?: boolean; error?: string } | void>;
     deviceId: string;
 }
 

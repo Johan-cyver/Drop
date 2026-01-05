@@ -339,7 +339,7 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                             </div>
                         )}
 
-                        {post.has_poll && post.poll_options && !isShadowLocked && (
+                        {post.has_poll && Array.isArray(post.poll_options) && !isShadowLocked && (
                             <div className="mt-4 space-y-2">
                                 {post.poll_options.map((option, idx) => {
                                     const votes = pollVotes[idx] || 0;
