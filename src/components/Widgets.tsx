@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Quote, Timer, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -10,22 +11,16 @@ export default function Widgets() {
         const calculateTimeLeft = () => {
             const now = new Date();
             const target = new Date();
-            // Set target to next 8 PM
             target.setHours(20, 0, 0, 0);
-            if (now > target) {
-                target.setDate(target.getDate() + 1);
-            }
-
+            if (now > target) target.setDate(target.getDate() + 1);
             const diff = target.getTime() - now.getTime();
             const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
             const m = Math.floor((diff / (1000 * 60)) % 60);
             const s = Math.floor((diff / 1000) % 60);
-
-            setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')} `);
+            setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
         };
-
         const timer = setInterval(calculateTimeLeft, 1000);
-        calculateTimeLeft(); // Init
+        calculateTimeLeft();
         return () => clearInterval(timer);
     }, []);
 
@@ -44,7 +39,7 @@ export default function Widgets() {
     }, []);
 
     return (
-        <aside className="hidden lg:flex lg:col-span-3 flex-col w-full h-screen sticky top-0 p-6 pt-8 gap-8 border-l border-white/5 bg-dark-950/30 backdrop-blur-xl z-50">
+        <aside className="hidden lg:flex lg:col-span-3 flex-col w-full h-screen sticky top-0 p-6 pt-8 gap-8 border-l border-white/5 bg-dark-950/30 backdrop-blur-xl z-50 overflow-y-auto scrollbar-hide">
 
             {/* Next Drop Countdown */}
             <div className="bg-gradient-to-br from-brand-start/10 to-brand-end/10 border border-white/10 rounded-2xl p-6 relative overflow-hidden group">
@@ -58,11 +53,8 @@ export default function Widgets() {
                 <p className="text-[10px] text-gray-500">Global refresh in sync.</p>
             </div>
 
-        </div>
-            </div >
-
-        {/* College Leaderboard */ }
-        < div className = "glass-card rounded-2xl p-6 border border-white/5 bg-gradient-to-b from-white/5 to-transparent" >
+            {/* College Leaderboard */}
+            <div className="glass-panel rounded-2xl p-6 border border-white/5 bg-gradient-to-b from-white/5 to-transparent">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xs font-black uppercase tracking-[0.2em] text-brand-glow">
                         College Supremacy
@@ -76,9 +68,9 @@ export default function Widgets() {
                             <div className="flex items-center gap-3">
                                 <div className={cn(
                                     "w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black",
-                                    i === 0 ? "bg-yellow-500 text-black" : 
-                                    i === 1 ? "bg-gray-300 text-black" :
-                                    i === 2 ? "bg-orange-500 text-black" : "bg-white/5 text-gray-500"
+                                    i === 0 ? "bg-yellow-500 text-black shadow-[0_0_10px_rgba(234,179,8,0.3)]" :
+                                        i === 1 ? "bg-gray-300 text-black" :
+                                            i === 2 ? "bg-orange-500 text-black" : "bg-white/5 text-gray-500"
                                 )}>
                                     {i + 1}
                                 </div>
@@ -98,11 +90,38 @@ export default function Widgets() {
                         </div>
                     ))}
                 </div>
-            </div >
+            </div>
 
-        <div className="mt-auto text-center">
-            <p className="text-[10px] text-gray-600 font-mono">Safe. Anonymous. Encrypted.</p>
-        </div>
-        </aside >
+            {/* Real Trending Topics */}
+            <div className="glass-panel rounded-2xl p-6 border border-white/5">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                        Trending Spice
+                    </h3>
+                    <Quote className="w-4 h-4 text-gray-600" />
+                </div>
+
+                <div className="space-y-5">
+                    {trending.length > 0 ? trending.map((topic, i) => (
+                        <div key={topic.tag} className="flex items-center justify-between group cursor-pointer">
+                            <div>
+                                <h4 className="font-bold text-gray-200 group-hover:text-brand-glow transition-colors text-sm">
+                                    #{topic.tag}
+                                </h4>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-mono text-gray-500">{topic.count}</span>
+                            </div>
+                        </div>
+                    )) : (
+                        <p className="text-xs text-gray-500 italic text-center py-4">Brewing fresh tea...</p>
+                    )}
+                </div>
+            </div>
+
+            <div className="mt-auto pt-6 text-center border-t border-white/5">
+                <p className="text-[10px] text-gray-600 font-mono tracking-tighter">Safe. Anonymous. Encrypted.</p>
+            </div>
+        </aside>
     );
 }
