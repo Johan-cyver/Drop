@@ -52,7 +52,15 @@ export default function MyLogicPage() {
             setSavedPosts(updated);
         };
         window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
+
+        // Listen for Balance Updates
+        const handleBalanceUpdate = () => fetchProfile(did);
+        window.addEventListener('balance_update', handleBalanceUpdate);
+
+        return () => {
+            window.removeEventListener('storage', handleStorage);
+            window.removeEventListener('balance_update', handleBalanceUpdate);
+        }
     }, []);
 
     const fetchProfile = async (did?: string | null) => {

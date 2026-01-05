@@ -35,7 +35,7 @@ export interface Post {
 
 interface ConfessionCardProps {
     post: Post;
-    onVote: (id: string, value: number) => void;
+    onVote: (id: string, value: number) => Promise<void> | void;
     hideIdentity?: boolean;
 }
 
@@ -78,6 +78,7 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ confession_id: post.id, emoji, device_id: did })
             });
+            window.dispatchEvent(new Event('balance_update'));
         } catch (e) {
             console.error('Reaction failed', e);
         }

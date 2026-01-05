@@ -71,9 +71,19 @@ export default function DropChat({ confessionId, deviceId, userHandle, userAvata
         return () => clearInterval(interval);
     }, [confessionId]);
 
+    // Smart Auto-scroll
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        if (!scrollRef.current) return;
+
+        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+
+        if (isNearBottom) {
+            setTimeout(() => {
+                if (scrollRef.current) {
+                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                }
+            }, 100);
         }
     }, [messages]);
 
