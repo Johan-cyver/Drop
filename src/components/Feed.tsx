@@ -1,8 +1,6 @@
-'use client';
-import { useState, useEffect } from 'react';
-import ConfessionCard, { Post } from './ConfessionCard';
-import { Timer } from 'lucide-react';
-import { calculateNextDrop, formatCountdown } from '@/lib/utils';
+import { cn, calculateNextDrop, formatCountdown } from '@/lib/utils';
+import Leaderboard from './Leaderboard';
+import TrendingTopics from './TrendingTopics';
 
 export default function Feed({
     posts,
@@ -23,7 +21,7 @@ export default function Feed({
     globalMegaDrop?: Post | null
 }) {
     const props = arguments[0];
-    const [filter, setFilter] = useState<'new' | 'hot'>('new');
+    const [filter, setFilter] = useState<'new' | 'hot' | 'trending'>('new');
     const [nextDropCountdown, setNextDropCountdown] = useState('');
 
     // Update Next Drop countdown every second
@@ -146,9 +144,14 @@ export default function Feed({
                     </div>
                 </div>
 
-                {/* Posts Stream */}
+                {/* Posts Stream / Trending View */}
                 <div className="flex flex-col gap-4 px-4 lg:px-6">
-                    {sortedPosts.length > 0 ? (
+                    {filter === 'trending' ? (
+                        <div className="space-y-8 py-4">
+                            <TrendingTopics compact />
+                            <Leaderboard compact />
+                        </div>
+                    ) : sortedPosts.length > 0 ? (
                         sortedPosts.map(post => (
                             <ConfessionCard key={post.id} post={post} onVote={onVote} hideIdentity={hideIdentity} />
                         ))
