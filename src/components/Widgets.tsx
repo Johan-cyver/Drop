@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Quote, Timer } from 'lucide-react';
+import { Quote, Timer, Trophy } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function Widgets() {
     const [timeLeft, setTimeLeft] = useState('');
     const [trending, setTrending] = useState<{ tag: string, count: number }[]>([]);
+    const [leaderboard, setLeaderboard] = useState<any[]>([]);
 
     useEffect(() => {
         const calculateTimeLeft = () => {
@@ -35,6 +36,11 @@ export default function Widgets() {
                 if (data.tags) setTrending(data.tags);
             })
             .catch(err => console.error('Failed to fetch trending widgets', err));
+
+        fetch('/api/colleges/leaderboard')
+            .then(res => res.json())
+            .then(data => setLeaderboard(data))
+            .catch(err => console.error('Failed to fetch leaderboard', err));
     }, []);
 
     return (
@@ -52,37 +58,51 @@ export default function Widgets() {
                 <p className="text-[10px] text-gray-500">Global refresh in sync.</p>
             </div>
 
-            {/* Real Trending Topics */}
-            <div className="glass-card rounded-2xl p-6 border border-white/5">
+        </div>
+            </div >
+
+        {/* College Leaderboard */ }
+        < div className = "glass-card rounded-2xl p-6 border border-white/5 bg-gradient-to-b from-white/5 to-transparent" >
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                        People are talking about this
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-brand-glow">
+                        College Supremacy
                     </h3>
-                    <Quote className="w-4 h-4 text-gray-600" />
+                    <div className="px-2 py-0.5 rounded-full bg-brand-glow/10 border border-brand-glow/20 text-[8px] font-black text-brand-glow uppercase">Real-time</div>
                 </div>
 
-                <div className="space-y-5">
-                    {trending.length > 0 ? trending.map((topic, i) => (
-                        <div key={topic.tag} className="flex items-center justify-between group cursor-pointer">
-                            <div>
-                                <h4 className="font-bold text-gray-200 group-hover:text-brand-glow transition-colors text-sm">
-                                    {topic.tag}
-                                </h4>
+                <div className="space-y-4">
+                    {leaderboard.map((college, i) => (
+                        <div key={college.id} className="flex items-center justify-between group">
+                            <div className="flex items-center gap-3">
+                                <div className={cn(
+                                    "w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black",
+                                    i === 0 ? "bg-yellow-500 text-black" : 
+                                    i === 1 ? "bg-gray-300 text-black" :
+                                    i === 2 ? "bg-orange-500 text-black" : "bg-white/5 text-gray-500"
+                                )}>
+                                    {i + 1}
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-gray-200 text-xs truncate max-w-[120px]">
+                                        {college.name}
+                                    </h4>
+                                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{college.student_count} Members</p>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <div className={`w - 1.5 h - 1.5 rounded - full ${i === 0 ? 'bg-green-500 animate-pulse' : 'bg-gray-600'} `} />
-                                <span className="text-[10px] font-mono text-gray-500">{topic.count}</span>
+                            <div className="text-right">
+                                <span className="text-[10px] font-black text-brand-glow block">
+                                    ${(parseInt(college.total_wealth || '0') / 1000).toFixed(1)}K
+                                </span>
+                                <span className="text-[8px] font-bold text-gray-600 uppercase tracking-tighter">Gold</span>
                             </div>
                         </div>
-                    )) : (
-                        <p className="text-xs text-gray-500 italic">No trending topics yet.</p>
-                    )}
+                    ))}
                 </div>
-            </div>
+            </div >
 
-            <div className="mt-auto text-center">
-                <p className="text-[10px] text-gray-600 font-mono">Safe. Anonymous. Encrypted.</p>
-            </div>
-        </aside>
+        <div className="mt-auto text-center">
+            <p className="text-[10px] text-gray-600 font-mono">Safe. Anonymous. Encrypted.</p>
+        </div>
+        </aside >
     );
 }

@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
         );
 
         // Get counts for the specific post
-        let postCount = 0;
-        let typingCount = 0;
+        let viewers = 0;
+        let typers = 0;
         if (viewing_confession_id) {
             const postRes = await query(
                 `SELECT 

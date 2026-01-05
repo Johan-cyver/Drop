@@ -55,11 +55,35 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
 
     // Reactions
     const [reactions, setReactions] = useState(post.reactions || []);
+    const [viewerCount, setViewerCount] = useState(0);
     const emojis = ['🔥', '😂', '😮', '🧊', '🚩'];
 
     useEffect(() => {
         if (post.reactions) setReactions(post.reactions);
-    }, [post.reactions]);
+
+        // Pulse Heartbeat (Tell system we are viewing this card)
+        const sendPulse = async () => {
+            try {
+                const did = localStorage.getItem('device_id');
+                const res = await fetch('/api/pulse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        device_id: did,
+                        viewing_confession_id: post.id
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setViewerCount(data.post_viewers || 0);
+                }
+            } catch (e) { }
+        };
+
+        sendPulse();
+        const pulseInterval = setInterval(sendPulse, 10000); // 10s heartbeat
+        return () => clearInterval(pulseInterval);
+    }, [post.reactions, post.id]);
 
     const handleReaction = async (emoji: string) => {
         // Optimistic
@@ -203,9 +227,17 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                     </div>
 
                     {isTrending && (
-                        <div className="bg-orange-500 text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_20px_rgba(249,115,22,0.4)] border border-orange-400/50 scale-90 md:scale-100">
-                            <Sparkles className="w-3 h-3 fill-current" />
-                            <span className="text-[10px] font-black uppercase tracking-wider">Hot Drop</span>
+                        <div className="flex items-center gap-3">
+                            {viewerCount > 1 && (
+                                <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/5 text-[9px] font-black text-white/40 uppercase tracking-widest">
+                                    <div className="w-1 h-1 bg-red-500 rounded-full animate-ping" />
+                                    {viewerCount} Watching
+                                </div>
+                            )}
+                            <div className="bg-orange-500 text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-[0_0_20px_rgba(249,115,22,0.4)] border border-orange-400/50 scale-90 md:scale-100">
+                                <Sparkles className="w-3 h-3 fill-current" />
+                                <span className="text-[10px] font-black uppercase tracking-wider">Hot Drop</span>
+                            </div>
                         </div>
                     )}
                 </div>
