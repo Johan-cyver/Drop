@@ -1,3 +1,7 @@
+'use client';
+import { useState, useEffect } from 'react';
+import ConfessionCard, { Post } from './ConfessionCard';
+import { Timer } from 'lucide-react';
 import { cn, calculateNextDrop, formatCountdown } from '@/lib/utils';
 import Leaderboard from './Leaderboard';
 import TrendingTopics from './TrendingTopics';
