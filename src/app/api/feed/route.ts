@@ -39,7 +39,8 @@ export async function GET(req: NextRequest) {
                 c.is_open,
                 c.unlock_votes,
                 c.unlock_threshold,
-                (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count
+                (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
+                EXISTS(SELECT 1 FROM peeks WHERE peeks.confession_id = c.id AND peeks.device_id = $1) as has_peeked
             FROM confessions c
             LEFT JOIN votes v ON v.confession_id = c.id AND v.device_id = $1
             LEFT JOIN users u ON u.device_id = c.device_id
@@ -60,9 +61,10 @@ export async function GET(req: NextRequest) {
             comment_count: parseInt(row.comment_count || '0'),
             is_shadow: !!row.is_shadow,
             is_open: !!row.is_open,
-            unlock_votes: parseInt(row.unlock_votes || '0'), // Legacy support
-            unlock_threshold: parseInt(row.unlock_threshold || '5'), // New dynamic threshold
-            isDropActive: true // By default active if not expired
+            unlock_votes: parseInt(row.unlock_votes || '0'),
+            unlock_threshold: parseInt(row.unlock_threshold || '5'),
+            has_peeked: !!row.has_peeked,
+            isDropActive: true
         }));
 
         // 1.5 Fetch Reactions for these posts

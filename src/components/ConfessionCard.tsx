@@ -31,6 +31,7 @@ export interface Post {
     image?: string | null; // Data URI for camera photo
     color?: string; // Custom card color for sharing
     isDropActive?: boolean;
+    has_peeked?: boolean;
     reactions?: { emoji: string; count: number; active?: boolean }[];
 }
 
@@ -48,7 +49,8 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
     const [isChatOpen, setIsChatOpen] = useState(false);
 
     // Shadow Drop Logic
-    const isShadowLocked = post.is_shadow && post.upvotes < (post.unlock_votes || 5);
+    const [hasPeeked, setHasPeeked] = useState(post.has_peeked);
+    const isShadowLocked = post.is_shadow && post.upvotes < (post.unlock_votes || 5) && !hasPeeked;
     const unlockProgress = Math.min(100, (post.upvotes / (post.unlock_votes || 5)) * 100);
 
     // Reactions
@@ -231,6 +233,33 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                                     />
                                 </div>
                                 <p className="text-[10px] font-black text-brand-glow">{post.upvotes} / {post.unlock_votes || 5}</p>
+
+                                <button
+                                    onClick={async (e) => {
+                                        e.preventDefault();
+                                        try {
+                                            const did = localStorage.getItem('device_id');
+                                            const res = await fetch('/api/user/peek', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ confession_id: post.id, device_id: did })
+                                            });
+                                            if (res.ok) {
+                                                setHasPeeked(true);
+                                                window.dispatchEvent(new Event('balance_update'));
+                                                showToast('Peek successful!', 'success');
+                                            } else {
+                                                const err = await res.json();
+                                                showToast(err.error || 'Peek failed', 'error');
+                                            }
+                                        } catch (e) {
+                                            showToast('Network error', 'error');
+                                        }
+                                    }}
+                                    className="w-full py-4 mt-2 bg-white/10 hover:bg-brand-glow hover:text-white rounded-2xl border border-white/10 flex items-center justify-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest text-white/70"
+                                >
+                                    <Zap className="w-3 h-3" /> Peek for 50 Coins
+                                </button>
                             </div>
                         </div>
                     )}

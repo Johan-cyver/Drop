@@ -212,6 +212,17 @@ export async function GET(req: NextRequest) {
             );
         `);
 
+        // 9. Peeks Table (Spending coins to unlock content early)
+        await query(`
+            CREATE TABLE IF NOT EXISTS peeks (
+                id SERIAL PRIMARY KEY,
+                device_id TEXT,
+                confession_id TEXT REFERENCES confessions(id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(device_id, confession_id)
+            );
+        `);
+
         return NextResponse.json({
             success: true,
             message: shouldReset ? 'Database Wipe and Reset Complete' : 'Database Setup Complete',
