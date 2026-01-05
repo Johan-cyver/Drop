@@ -155,7 +155,9 @@ export default function Home() {
                     is_shadow: options?.is_shadow,
                     is_open: options?.is_open,
                     unlock_threshold: options?.unlock_threshold,
-                    tease_mode: options?.tease_mode
+                    tease_mode: options?.tease_mode,
+                    tease_content: options?.tease_content,
+                    poll_options: options?.poll_options
                 })
             });
 

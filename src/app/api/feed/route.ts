@@ -64,6 +64,8 @@ export async function GET(req: NextRequest) {
             unlock_votes: parseInt(row.unlock_votes || '0'),
             unlock_threshold: parseInt(row.unlock_threshold || '5'),
             has_peeked: !!row.has_peeked,
+            poll_options: typeof row.poll_options === 'string' ? JSON.parse(row.poll_options) : row.poll_options,
+            poll_votes: typeof row.poll_votes === 'string' ? JSON.parse(row.poll_votes) : row.poll_votes,
             isDropActive: true
         }));
 

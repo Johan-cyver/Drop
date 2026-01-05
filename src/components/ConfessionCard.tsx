@@ -291,7 +291,7 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                         <Link href={`/confession/${post.id}`} className="block">
                             <p className={cn(
                                 "text-lg md:text-2xl font-bold text-white leading-tight mb-3 tracking-tight transition-all duration-700",
-                                isShadowLocked ? "blur-xl select-none opacity-50" : "blur-0"
+                                (isShadowLocked && !post.tease_content) ? "blur-xl select-none opacity-50" : "blur-0"
                             )}>
                                 {isShadowLocked && post.tease_content ? post.tease_content : post.content}
                             </p>
