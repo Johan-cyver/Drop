@@ -19,8 +19,10 @@ export default function Feed({
     selectedCollegeId?: string | null,
     onCollegeChange?: (id: string) => void,
     userCollegeId?: string | null,
-    hideIdentity?: boolean
+    hideIdentity?: boolean,
+    globalMegaDrop?: Post | null
 }) {
+    const props = arguments[0];
     const [filter, setFilter] = useState<'new' | 'hot'>('new');
     const [nextDropCountdown, setNextDropCountdown] = useState('');
 
@@ -83,44 +85,77 @@ export default function Feed({
             {/* Scrollable Area */}
             <div className="flex-1 overflow-y-auto lg:overflow-visible pb-24 pt-2 lg:pt-8" id="scroller">
 
-                {/* Desktop Header */}
-                <div className="hidden lg:flex flex-col gap-4 px-6 mb-6">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold uppercase tracking-widest">CONFESSION</h2>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setFilter('new')}
-                                className={`font-bold transition ${filter === 'new' ? 'text-white' : 'text-gray-500'}`}
-                            >
-                                Fresh
-                            </button>
-                            <button
-                                onClick={() => setFilter('hot')}
-                                className={`font-bold transition ${filter === 'hot' ? 'text-brand-glow' : 'text-gray-500'}`}
-                            >
-                                Burning 🔥
-                            </button>
+                {/* Worldwide Mega Drop Premiere */}
+                {(props as any).globalMegaDrop && (
+                    <div className="px-4 lg:px-6 mb-8 mt-2">
+                        <div className="relative group">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-brand-glow via-indigo-500 to-purple-600 rounded-[2.5rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 animate-pulse" />
+                            <div className="relative bg-dark-900/90 backdrop-blur-3xl border border-white/10 rounded-[2rem] overflow-hidden">
+                                <div className="bg-gradient-to-r from-brand-glow to-indigo-600 px-6 py-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Worldwide Premiere</span>
+                                    </div>
+                                    <span className="text-[9px] font-black text-white/80 uppercase">{(props as any).globalMegaDrop.college_name}</span>
+                                </div>
+                                <div className="p-1">
+                                    <ConfessionCard
+                                        post={(props as any).globalMegaDrop}
+                                        onVote={onVote}
+                                        hideIdentity={hideIdentity}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-4 flex items-center gap-3 px-4">
+                            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">College Feed</span>
+                            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                         </div>
                     </div>
-                </div>
+                )}
 
-                {/* Posts Stream */}
-                <div className="flex flex-col gap-4 px-4 lg:px-6">
-                    {sortedPosts.length > 0 ? (
-                        sortedPosts.map(post => (
-                            <ConfessionCard key={post.id} post={post} onVote={onVote} hideIdentity={hideIdentity} />
-                        ))
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-20 px-10 text-center glass-panel rounded-3xl border border-white/5">
-                            <div className="text-4xl mb-4">🍵</div>
-                            <h3 className="text-lg font-bold text-white mb-2">No tea here yet</h3>
-                            <p className="text-sm text-gray-500">Be the first to drop some spice in this college!</p>
+                {/* Scrollable Area */}
+                <div className="flex-1 overflow-y-auto lg:overflow-visible pb-24 pt-2 lg:pt-8" id="scroller">
+
+                    {/* Desktop Header */}
+                    <div className="hidden lg:flex flex-col gap-4 px-6 mb-6">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-bold uppercase tracking-widest">CONFESSION</h2>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setFilter('new')}
+                                    className={`font-bold transition ${filter === 'new' ? 'text-white' : 'text-gray-500'}`}
+                                >
+                                    Fresh
+                                </button>
+                                <button
+                                    onClick={() => setFilter('hot')}
+                                    className={`font-bold transition ${filter === 'hot' ? 'text-brand-glow' : 'text-gray-500'}`}
+                                >
+                                    Burning 🔥
+                                </button>
+                            </div>
                         </div>
-                    )}
-                </div>
+                    </div>
 
-                <div className="h-20 lg:h-10" />
-            </div>
+                    {/* Posts Stream */}
+                    <div className="flex flex-col gap-4 px-4 lg:px-6">
+                        {sortedPosts.length > 0 ? (
+                            sortedPosts.map(post => (
+                                <ConfessionCard key={post.id} post={post} onVote={onVote} hideIdentity={hideIdentity} />
+                            ))
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-20 px-10 text-center glass-panel rounded-3xl border border-white/5">
+                                <div className="text-4xl mb-4">🍵</div>
+                                <h3 className="text-lg font-bold text-white mb-2">No tea here yet</h3>
+                                <p className="text-sm text-gray-500">Be the first to drop some spice in this college!</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="h-20 lg:h-10" />
+                </div>
         </main>
     );
 }

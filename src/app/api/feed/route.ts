@@ -104,9 +104,33 @@ export async function GET(req: NextRequest) {
             };
         });
 
-        // 4. Return the Mix
+        // 4. Fetch Worldwide Mega Drop (Highest velocity in last 24h across ALL colleges)
+        const globalMegaRes = await query(`
+            SELECT 
+                c.*, u.handle, u.avatar, col.name as college_name,
+                (c.upvotes + (SELECT COUNT(*) FROM messages WHERE confession_id = c.id) + (SELECT COUNT(*) FROM reactions WHERE confession_id = c.id)) as velocity
+            FROM confessions c
+            LEFT JOIN users u ON u.device_id = c.device_id
+            LEFT JOIN colleges col ON col.id = c.college_id
+            WHERE c.status = 'LIVE' 
+                AND c.created_at > NOW() - INTERVAL '24 hours'
+            ORDER BY velocity DESC
+            LIMIT 1
+        `);
+        const globalMegaDrop = globalMegaRes.rows[0] ? {
+            ...globalMegaRes.rows[0],
+            upvotes: parseInt(globalMegaRes.rows[0].upvotes || '0'),
+            is_shadow: !!globalMegaRes.rows[0].is_shadow,
+            is_open: !!globalMegaRes.rows[0].is_open,
+            unlock_votes: parseInt(globalMegaRes.rows[0].unlock_votes || '0'),
+            unlock_threshold: parseInt(globalMegaRes.rows[0].unlock_threshold || '5'),
+            isGlobal: true
+        } : null;
+
+        // 5. Return the Mix
         return NextResponse.json({
             feed: enrichedFeed,
+            globalMegaDrop,
             meta: {
                 hotCount: hot.length,
                 newCount: newLane.length
