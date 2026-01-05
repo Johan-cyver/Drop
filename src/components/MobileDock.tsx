@@ -15,7 +15,6 @@ export default function MobileDock({ onCompose, onFeedback }: MobileDockProps) {
         { icon: Home, label: 'Confession', href: '/', active: pathname === '/' },
         { icon: Zap, label: 'Open', href: '/open', active: pathname === '/open' },
         { icon: Bell, label: 'Activity', href: '/notifications', active: pathname === '/notifications' },
-        { icon: Compass, label: 'Discover', href: '/discover', active: pathname === '/discover' },
         { icon: User, label: 'Profile', href: '/my-logic', active: pathname === '/my-logic' },
     ];
 
@@ -56,15 +55,6 @@ export default function MobileDock({ onCompose, onFeedback }: MobileDockProps) {
                         </Link>
                     ))}
                 </div>
-
-                <div className="w-[1px] h-6 bg-white/10 mx-1" />
-
-                <button
-                    onClick={onFeedback}
-                    className="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:text-white transition-all active:scale-90"
-                >
-                    <MessageSquare className="w-5 h-5" />
-                </button>
             </div>
         </div>
     );

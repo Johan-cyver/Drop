@@ -6,7 +6,8 @@ import { cn, calculateNextDrop, formatCountdown } from '@/lib/utils';
 import Leaderboard from './Leaderboard';
 import TrendingTopics from './TrendingTopics';
 import QuickGuide from './QuickGuide';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Bell } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Feed({
     posts,
@@ -60,6 +61,13 @@ export default function Feed({
                         <h1 className="font-black text-xl tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70">The Drop</h1>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Link
+                            href="/notifications"
+                            className="p-2 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white transition relative"
+                        >
+                            <Bell className="w-4 h-4" />
+                            <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full border border-dark-950" />
+                        </Link>
                         <button
                             onClick={() => setShowGuide(true)}
                             className="p-2 rounded-full bg-white/5 border border-white/10 text-brand-glow hover:bg-white/10 transition"
@@ -68,7 +76,6 @@ export default function Feed({
                         </button>
                         <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10 shadow-lg backdrop-blur-md">
                             <span className="text-[9px] font-bold text-brand-glow tracking-widest">{nextDropCountdown}</span>
-                            <Timer className="w-3 h-3 text-gray-400" />
                         </div>
                     </div>
                 </div>
