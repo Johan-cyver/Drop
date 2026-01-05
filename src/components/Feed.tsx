@@ -1,10 +1,8 @@
-'use client';
-import { useState, useEffect } from 'react';
-import ConfessionCard, { Post } from './ConfessionCard';
-import { Timer } from 'lucide-react';
 import { cn, calculateNextDrop, formatCountdown } from '@/lib/utils';
 import Leaderboard from './Leaderboard';
 import TrendingTopics from './TrendingTopics';
+import QuickGuide from './QuickGuide';
+import { HelpCircle } from 'lucide-react';
 
 export default function Feed({
     posts,
@@ -26,6 +24,7 @@ export default function Feed({
 }) {
     const props = arguments[0];
     const [filter, setFilter] = useState<'new' | 'hot' | 'trending'>('new');
+    const [showGuide, setShowGuide] = useState(false);
     const [nextDropCountdown, setNextDropCountdown] = useState('');
 
     // Update Next Drop countdown every second
@@ -56,9 +55,17 @@ export default function Feed({
                         <div className="w-2 h-2 bg-brand-glow rounded-full shadow-[0_0_15px_rgba(139,92,246,0.8)] animate-pulse" />
                         <h1 className="font-black text-xl tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70">The Drop</h1>
                     </div>
-                    <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10 shadow-lg backdrop-blur-md">
-                        <span className="text-[9px] font-bold text-brand-glow tracking-widest">{nextDropCountdown}</span>
-                        <Timer className="w-3 h-3 text-gray-400" />
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setShowGuide(true)}
+                            className="p-2 rounded-full bg-white/5 border border-white/10 text-brand-glow hover:bg-white/10 transition"
+                        >
+                            <HelpCircle className="w-4 h-4" />
+                        </button>
+                        <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10 shadow-lg backdrop-blur-md">
+                            <span className="text-[9px] font-bold text-brand-glow tracking-widest">{nextDropCountdown}</span>
+                            <Timer className="w-3 h-3 text-gray-400" />
+                        </div>
                     </div>
                 </div>
 
@@ -170,6 +177,8 @@ export default function Feed({
 
                 <div className="h-20 lg:h-10" />
             </div>
+
+            <QuickGuide isOpen={showGuide} onClose={() => setShowGuide(false)} />
         </main>
     );
 }
