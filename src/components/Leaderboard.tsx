@@ -15,7 +15,7 @@ export default function Leaderboard({ compact = false }: { compact?: boolean }) 
         <div className={cn("glass-panel rounded-2xl p-6 border border-white/5 bg-gradient-to-b from-white/5 to-transparent", compact && "p-4")}>
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-brand-glow">
-                    College Supremacy
+                    Drop Coin
                 </h3>
                 {!compact && <div className="px-2 py-0.5 rounded-full bg-brand-glow/10 border border-brand-glow/20 text-[8px] font-black text-brand-glow uppercase">Real-time</div>}
             </div>
@@ -33,17 +33,16 @@ export default function Leaderboard({ compact = false }: { compact?: boolean }) 
                                 {i + 1}
                             </div>
                             <div>
-                                <h4 className="font-bold text-gray-200 text-xs truncate max-w-[120px] md:max-w-none">
+                                <h4 className="font-bold text-gray-200 text-xs truncate max-w-[100px] lg:max-w-[140px]">
                                     {college.name}
                                 </h4>
                                 <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{college.student_count} Members</p>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <span className="text-[10px] font-black text-brand-glow block">
-                                ${(parseInt(college.total_wealth || '0') / 1000).toFixed(1)}K
+                        <div className="text-right flex-shrink-0">
+                            <span className="text-[10px] font-black text-brand-glow block uppercase">
+                                {(parseInt(college.total_wealth || '0') / 1000).toFixed(1)}K DC
                             </span>
-                            <span className="text-[8px] font-bold text-gray-600 uppercase tracking-tighter">Gold</span>
                         </div>
                     </div>
                 ))}

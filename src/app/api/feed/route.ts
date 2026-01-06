@@ -22,10 +22,15 @@ export async function GET(req: NextRequest) {
         if (!targetCollegeId) {
             return NextResponse.json({
                 feed: [],
+                college_name: null,
                 meta: { hotCount: 0, newCount: 0 },
                 msg: "No college selected or found"
             });
         }
+
+        // 1.5 Fetch College Name
+        const collegeRes = await query(`SELECT name FROM colleges WHERE id = $1`, [targetCollegeId]);
+        const collegeName = collegeRes.rows[0]?.name || "Unknown College";
 
         // 1. Fetch RAW "LIVE" confessions with My Vote
         const rawPostsRes = await query(`
@@ -52,6 +57,9 @@ export async function GET(req: NextRequest) {
             LIMIT 200
         `, [deviceId || '', targetCollegeId]);
 
+        // 1.1 Extract Post IDs for reveals and reactions
+        const postIds = rawPostsRes.rows.map(row => row.id);
+
         const rawPosts = rawPostsRes.rows.map(row => ({
             ...row,
             id: row.id,
@@ -69,8 +77,18 @@ export async function GET(req: NextRequest) {
             isDropActive: true
         }));
 
-        // 1.5 Fetch Reactions for these posts
-        const postIds = rawPosts.map(p => p.id);
+        // 1.2 Fetch specifically revealed word indices for these posts
+        let allReveals: any[] = [];
+        if (postIds.length > 0) {
+            const revealsRes = await query(`
+                SELECT confession_id, word_index 
+                FROM peeks 
+                WHERE device_id = $1 AND confession_id = ANY($2) AND word_index IS NOT NULL
+            `, [deviceId, postIds]);
+            allReveals = revealsRes.rows;
+        }
+
+        // 1.3 Fetch Reactions for these posts
         let allReactions: any[] = [];
         if (postIds.length > 0) {
             const reactionsRes = await query(`
@@ -83,8 +101,12 @@ export async function GET(req: NextRequest) {
             allReactions = reactionsRes.rows;
         }
 
-        const rawPostsWithReactions = rawPosts.map(p => ({
+        // 1.4 Combine reveals and reactions
+        const rawPostsWithRevealsAndReactions = rawPosts.map(p => ({
             ...p,
+            revealed_words: allReveals
+                .filter(r => r.confession_id === p.id)
+                .map(r => r.word_index),
             reactions: allReactions
                 .filter(r => r.confession_id === p.id)
                 .map(r => ({ emoji: r.emoji, count: parseInt(r.count), active: !!r.active }))
@@ -92,7 +114,7 @@ export async function GET(req: NextRequest) {
 
         // 2. Apply "The Hook" Algorithm
         // We need to cast types to match what rankFeed expects
-        const { feed, hot, new: newLane } = rankFeed(rawPostsWithReactions as any);
+        const { feed, hot, new: newLane } = rankFeed(rawPostsWithRevealsAndReactions as any);
 
         // 3. Enrich with DROP_ACTIVE status
         const now = new Date();
@@ -134,6 +156,7 @@ export async function GET(req: NextRequest) {
         // 5. Return the Mix
         return NextResponse.json({
             feed: enrichedFeed,
+            college_name: collegeName,
             globalMegaDrop,
             meta: {
                 hotCount: hot.length,

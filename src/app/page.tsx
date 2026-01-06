@@ -22,6 +22,7 @@ export default function Home() {
     const [userCollegeId, setUserCollegeId] = useState<string | null>(null);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
     const [globalMegaDrop, setGlobalMegaDrop] = useState<Post | null>(null);
+    const [collegeName, setCollegeName] = useState<string | null>(null);
 
     const router = useRouter();
 
@@ -108,6 +109,7 @@ export default function Home() {
                 setPosts(data.feed);
                 setHotCount(data.meta?.hotCount || 0);
                 setGlobalMegaDrop(data.globalMegaDrop || null);
+                setCollegeName(data.college_name || null);
             }
         } catch (e) {
             console.error(e);
@@ -199,6 +201,7 @@ export default function Home() {
                 onVote={handleVote}
                 userCollegeId={userCollegeId}
                 globalMegaDrop={globalMegaDrop}
+                collegeName={collegeName}
             />
 
             <Widgets />

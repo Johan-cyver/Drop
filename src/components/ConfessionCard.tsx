@@ -27,6 +27,7 @@ export interface Post {
     unlock_threshold: number;
     unlock_votes: number;
     tease_content?: string | null;
+    revealed_words?: number[];
     comment_count?: number;
     image?: string | null; // Data URI for camera photo
     color?: string; // Custom card color for sharing
@@ -36,6 +37,7 @@ export interface Post {
     has_poll?: boolean;
     poll_options?: string[];
     poll_votes?: Record<number, number>;
+    college_name?: string;
 }
 
 interface ConfessionCardProps {
@@ -64,6 +66,10 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
     // Poll State
     const [pollVotes, setPollVotes] = useState<Record<number, number>>(post.poll_votes || {});
     const [hasVotedPoll, setHasVotedPoll] = useState(false);
+
+    // Surgical Peek State
+    const [revealedMap, setRevealedMap] = useState<Record<number, string>>({});
+    const [confirmPeekIndex, setConfirmPeekIndex] = useState<number | null>(null);
 
     const pollTotal = useMemo(() =>
         Object.values(pollVotes).reduce((a, b) => a + b, 0)
@@ -145,11 +151,40 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                 body: JSON.stringify({ confession_id: post.id, option_index: index, device_id: did })
             });
             if (res.ok) {
-                showToast('+20 Coins! Vote recorded.', 'success');
+                showToast('+20 Drop Coins! Vote recorded.', 'success');
                 window.dispatchEvent(new Event('balance_update'));
             }
         } catch (e) {
             console.error('Poll vote failed', e);
+        }
+    };
+
+    const handleSurgicalPeek = async (index: number) => {
+        try {
+            const did = localStorage.getItem('device_id');
+            const res = await fetch('/api/user/peek', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    confession_id: post.id,
+                    device_id: did,
+                    word_index: index
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.word) {
+                    setRevealedMap(prev => ({ ...prev, [index]: data.word }));
+                }
+                window.dispatchEvent(new Event('balance_update'));
+                showToast('Word revealed!', 'success');
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Peek failed', 'error');
+            }
+        } catch (e) {
+            showToast('Network error', 'error');
         }
     };
 
@@ -288,16 +323,91 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
 
                     {/* Content */}
                     <div className="relative z-10 mb-4 md:mb-6">
-                        <Link href={`/confession/${post.id}`} className="block">
-                            <p className={cn(
-                                "text-lg md:text-2xl font-bold text-white leading-tight mb-3 tracking-tight transition-all duration-700",
+                        <div className="block">
+                            <div className={cn(
+                                "text-lg md:text-2xl font-bold text-white leading-tight mb-3 tracking-tight transition-all duration-700 flex flex-wrap gap-x-1.5 md:gap-x-2",
                                 (isShadowLocked && !post.tease_content) ? "blur-xl select-none opacity-50" : "blur-0"
                             )}>
-                                {isShadowLocked && post.tease_content ? post.tease_content : post.content}
-                            </p>
-                        </Link>
+                                {(() => {
+                                    if (isShadowLocked && post.tease_content) {
+                                        return post.tease_content.split(/\s+/).map((word, idx) => {
+                                            const isPlaceholder = word === '_____';
+                                            const isLocalRevealed = revealedMap[idx];
+                                            const isServerRevealed = post.revealed_words?.includes(idx);
 
-                        {isShadowLocked && (
+                                            if (isPlaceholder && !isLocalRevealed && !isServerRevealed) {
+                                                return (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            setConfirmPeekIndex(idx);
+                                                        }}
+                                                        className="inline-block px-2 bg-brand-glow/20 rounded-md blur-[3px] hover:blur-0 transition-all cursor-pointer select-none border border-brand-glow/30"
+                                                    >
+                                                        {word}
+                                                    </button>
+                                                );
+                                            }
+                                            return (
+                                                <span key={idx} className={cn(isLocalRevealed || isServerRevealed ? "text-brand-glow animate-in fade-in zoom-in-95 duration-500" : "")}>
+                                                    {isLocalRevealed || (isServerRevealed ? "..." : word)}
+                                                </span>
+                                            );
+                                        });
+                                    }
+                                    return post.content;
+                                })()}
+                            </div>
+                        </div>
+
+                        {/* Confirmation Modal for Word Peek */}
+                        <AnimatePresence>
+                            {confirmPeekIndex !== null && (
+                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        onClick={() => setConfirmPeekIndex(null)}
+                                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                                    />
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                        className="relative bg-dark-900 border border-white/10 p-6 rounded-[2rem] shadow-2xl max-w-[320px] text-center space-y-4"
+                                    >
+                                        <div className="w-16 h-16 rounded-2xl bg-brand-glow/10 flex items-center justify-center mx-auto">
+                                            <Zap className="w-8 h-8 text-brand-glow" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-black text-white uppercase tracking-tight">Reveal this word?</h3>
+                                            <p className="text-xs text-gray-500 font-bold mt-1">This will cost you 100 Drop Coins. 67 DC goes to the author.</p>
+                                        </div>
+                                        <div className="flex gap-3 pt-2">
+                                            <button
+                                                onClick={() => setConfirmPeekIndex(null)}
+                                                className="flex-1 py-3.5 rounded-2xl bg-white/5 text-gray-400 font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition"
+                                            >
+                                                Nah
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    handleSurgicalPeek(confirmPeekIndex);
+                                                    setConfirmPeekIndex(null);
+                                                }}
+                                                className="flex-1 py-3.5 rounded-2xl bg-brand-glow text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-brand-glow/20 hover:scale-[1.02] transition active:scale-95"
+                                            >
+                                                Peek it
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </div>
+                            )}
+                        </AnimatePresence>
+
+                        {isShadowLocked && !post.tease_content && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
                                 <div className="bg-black/60 backdrop-blur-md border border-white/10 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] shadow-2xl space-y-2 md:space-y-3 w-full max-w-[280px]">
                                     <p className="text-[8px] md:text-xs font-black uppercase tracking-[0.2em] text-white/50">Curiosity Unlock</p>
@@ -333,7 +443,7 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                                         }}
                                         className="w-full py-2.5 md:py-4 mt-1 bg-brand-glow text-white rounded-xl md:rounded-2xl shadow-lg shadow-brand-glow/20 flex items-center justify-center gap-2 transition-all font-black text-[9px] md:text-[10px] uppercase tracking-widest border border-white/10 active:scale-95"
                                     >
-                                        <Zap className="w-3 h-3 fill-current" /> Peek for 50 Coins
+                                        <Zap className="w-3 h-3 fill-current" /> Peek All (Soon)
                                     </button>
                                 </div>
                             </div>

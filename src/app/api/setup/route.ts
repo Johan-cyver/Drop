@@ -225,10 +225,21 @@ export async function GET(req: NextRequest) {
                 id SERIAL PRIMARY KEY,
                 device_id TEXT,
                 confession_id TEXT REFERENCES confessions(id) ON DELETE CASCADE,
+                word_index INTEGER, -- NULL means fully revealed
                 created_at TIMESTAMP DEFAULT NOW(),
-                UNIQUE(device_id, confession_id)
+                UNIQUE(device_id, confession_id, word_index)
             );
         `);
+
+        // Migration for peeks
+        try {
+            await query(`ALTER TABLE peeks ADD COLUMN IF NOT EXISTS word_index INTEGER`);
+            // Update constraint: Drop old unique and add new one
+            await query(`ALTER TABLE peeks DROP CONSTRAINT IF EXISTS peeks_device_id_confession_id_key`);
+            await query(`ALTER TABLE peeks ADD CONSTRAINT peeks_did_cid_wid_unique UNIQUE (device_id, confession_id, word_index)`);
+        } catch (e) {
+            console.log("Peeks migration error (likely already applied):", e);
+        }
 
         // 10. The Pulse Table (Real-time activity)
         await query(`

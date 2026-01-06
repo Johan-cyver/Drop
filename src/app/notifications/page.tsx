@@ -36,6 +36,9 @@ export default function NotificationsPage() {
         }
         setDeviceId(did);
         fetchNotifications(did);
+
+        const interval = setInterval(() => fetchNotifications(did!), 10000);
+        return () => clearInterval(interval);
     }, []);
 
     return (

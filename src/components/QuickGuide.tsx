@@ -13,14 +13,14 @@ export default function QuickGuide({ isOpen, onClose }: QuickGuideProps) {
         {
             icon: Zap,
             title: "Shadow Drops",
-            description: "Post blurred tea that only reveals once it hits an upvote threshold, or users spend coins to 'Peek'.",
+            description: "Post blurred tea that only reveals once it hits an upvote threshold, or users spend Drop Coins to 'Peek'.",
             color: "text-brand-glow",
             bg: "bg-brand-glow/10"
         },
         {
             icon: Coins,
-            title: "The Economy",
-            description: "Earn 100 Coins for every 1 Impact point. Upvote, chat, and react to gain wealth. Spend it on Peeks or premium reveals.",
+            title: "Drop Coins",
+            description: "Earn 100 Drop Coins for every 1 Impact point. Upvote, chat, and react to gain wealth. Spend it on word peeks or premium reveals.",
             color: "text-yellow-500",
             bg: "bg-yellow-500/10"
         },
@@ -101,7 +101,7 @@ export default function QuickGuide({ isOpen, onClose }: QuickGuideProps) {
                             <div className="bg-brand-glow/10 border border-brand-glow/20 p-5 rounded-3xl text-center space-y-2">
                                 <p className="text-[10px] font-black text-brand-glow uppercase tracking-[0.2em]">Pro Tip</p>
                                 <p className="text-xs text-white/80 font-bold leading-relaxed">
-                                    "Drop coins = Impact × 100. Use your impact points to flex on the leaderboard."
+                                    "Drop Coins = Impact × 100. Use your Drop Coins to flex on the leaderboard."
                                 </p>
                             </div>
                         </div>
