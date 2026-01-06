@@ -53,14 +53,15 @@ export async function POST(req: NextRequest) {
         const validName = name || '';
 
         await sql`
-            INSERT INTO users (device_id, college_id, handle, avatar, coins, name, pin_hash)
-            VALUES (${device_id}, ${validCollegeId}, ${handle}, ${avatar}, ${initialCoins}, ${validName}, ${pinHash})
+            INSERT INTO users (device_id, college_id, handle, avatar, coins, name, pin_hash, sound_enabled)
+            VALUES (${device_id}, ${validCollegeId}, ${handle}, ${avatar}, ${initialCoins}, ${validName}, ${pinHash}, TRUE)
             ON CONFLICT (device_id) DO UPDATE SET
                 handle = EXCLUDED.handle,
                 avatar = EXCLUDED.avatar,
                 name = EXCLUDED.name,
                 pin_hash = COALESCE(EXCLUDED.pin_hash, users.pin_hash),
-                college_id = EXCLUDED.college_id
+                college_id = EXCLUDED.college_id,
+                sound_enabled = COALESCE(EXCLUDED.sound_enabled, users.sound_enabled)
         `;
 
         return NextResponse.json({ success: true, user: { handle, avatar, name } });

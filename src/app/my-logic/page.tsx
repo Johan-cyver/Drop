@@ -153,13 +153,35 @@ export default function MyLogicPage() {
                                     ID: {deviceId.slice(0, 8).toUpperCase()}
                                 </span>
                             </p>
-                            <button
-                                onClick={() => setIsGuideOpen(true)}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-glow/10 border border-brand-glow/20 text-brand-glow text-[10px] font-black uppercase tracking-wider hover:bg-brand-glow/20 transition-all mb-4"
-                            >
-                                <HelpCircle className="w-3 h-3" />
-                                Quick Guide
-                            </button>
+                            <div className="flex items-center gap-2 mb-4">
+                                <button
+                                    onClick={() => setIsGuideOpen(true)}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-glow/10 border border-brand-glow/20 text-brand-glow text-[10px] font-black uppercase tracking-wider hover:bg-brand-glow/20 transition-all"
+                                >
+                                    <HelpCircle className="w-3 h-3" />
+                                    Quick Guide
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const newStatus = !user?.sound_enabled;
+                                        setUser({ ...user, sound_enabled: newStatus });
+                                        await fetch('/api/user/update-profile', {
+                                            method: 'POST',
+                                            body: JSON.stringify({ device_id: deviceId, sound_enabled: newStatus })
+                                        });
+                                        localStorage.setItem('sound_enabled', String(newStatus));
+                                        showToast(newStatus ? 'Sound enabled 🔊' : 'Sound muted 🔇', 'info');
+                                    }}
+                                    className={cn(
+                                        "flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-wider transition-all",
+                                        user?.sound_enabled
+                                            ? "bg-blue-500/10 border-blue-500/20 text-blue-400 hover:bg-blue-500/20"
+                                            : "bg-gray-500/10 border-gray-500/20 text-gray-400 hover:bg-gray-500/20"
+                                    )}
+                                >
+                                    {user?.sound_enabled ? 'Sound On' : 'Sound Off'}
+                                </button>
+                            </div>
                             <div className="flex flex-col gap-4 text-xs font-mono text-gray-400">
                                 <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-center p-4 bg-white/5 rounded-2xl border border-white/5 flex-1 hover:bg-white/10 transition-all cursor-default">

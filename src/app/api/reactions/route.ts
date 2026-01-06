@@ -48,24 +48,24 @@ export async function POST(req: NextRequest) {
                 await createNotification(device_id, 'coin_reward', `You earned +0.1K DC for reacting!`, 100, confession_id);
             }
 
-            // Author Reward (2 Impact = 200 Coins)
+            // Author Reward (Consolidated Engagement: Upvote or Reaction)
             const authorRes = await query(`SELECT device_id FROM confessions WHERE id = $1`, [confession_id]);
             const authorId = authorRes.rows[0]?.device_id;
 
             if (authorId && authorId !== device_id) {
-                const actionType = `REACTION_${emoji}`;
+                const ENG_REWARD = 'ENGAGEMENT_POSITIVE';
                 const alreadyAwarded = await query(
                     `SELECT 1 FROM reward_tracking WHERE confession_id = $1 AND device_id = $2 AND action_type = $3`,
-                    [confession_id, device_id, actionType]
+                    [confession_id, device_id, ENG_REWARD]
                 );
 
                 if (alreadyAwarded.rows.length === 0) {
-                    await query(`UPDATE users SET impact = impact + 2, coins = coins + 200 WHERE device_id = $1`, [authorId]);
+                    await query(`UPDATE users SET impact = impact + 5, coins = coins + 500 WHERE device_id = $1`, [authorId]);
                     await query(
                         `INSERT INTO reward_tracking (confession_id, device_id, action_type) VALUES ($1, $2, $3)`,
-                        [confession_id, device_id, actionType]
+                        [confession_id, device_id, ENG_REWARD]
                     );
-                    await createNotification(authorId, 'reaction', `Someone reacted with ${emoji} to your drop! +0.2K DC earned.`, 200, confession_id);
+                    await createNotification(authorId, 'reaction', `Someone reacted with ${emoji} to your drop! +0.5K DC earned.`, 500, confession_id);
                 }
             }
 

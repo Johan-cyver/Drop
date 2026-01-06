@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar';
 import Widgets from '@/components/Widgets';
 import MobileDock from '@/components/MobileDock';
 import ComposeModal from '@/components/ComposeModal';
-import { Bell, Heart, MessageCircle, Zap, MessageSquare, PlusCircle, Coins } from 'lucide-react';
+import { Bell, Heart, MessageCircle, Zap, MessageSquare, PlusCircle, Coins, X } from 'lucide-react';
 import { showToast } from '@/components/NotificationToast';
 import FeedbackModal from '@/components/FeedbackModal';
 import DropCoinIcon from '@/components/DropCoinIcon';
@@ -50,6 +50,17 @@ export default function NotificationsPage() {
             .finally(() => setLoading(false));
     };
 
+    const handleDelete = (id: string) => {
+        // Optimistic update
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        fetch(`/api/activity/delete?id=${id}&device_id=${deviceId}`, { method: 'DELETE' })
+            .catch(e => {
+                console.error(e);
+                showToast('Failed to delete notification', 'error');
+                fetchNotifications(deviceId);
+            });
+    };
+
     useEffect(() => {
         let did = localStorage.getItem('device_id');
         if (!did) {
@@ -83,18 +94,24 @@ export default function NotificationsPage() {
                         <div className="text-center text-gray-500 py-10">Checking activity...</div>
                     ) : notifications.length > 0 ? (
                         notifications.map((notif: any) => (
-                            <div key={notif.id} className="glass-card p-4 rounded-xl flex items-start gap-4 animate-in fade-in slide-in-from-bottom-2">
+                            <div key={notif.id} className="glass-card p-4 rounded-xl flex items-start gap-4 animate-in fade-in slide-in-from-bottom-2 group relative">
                                 <div className={cn("w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0", TypeColor(notif.type))}>
                                     <TypeIcon type={notif.type} />
                                 </div>
-                                <div>
-                                    <p className="text-gray-200 text-sm leading-relaxed mb-1">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-gray-200 text-sm leading-relaxed mb-1 pr-6">
                                         {notif.message}
                                     </p>
                                     <span className="text-[10px] uppercase tracking-wider text-gray-500 font-mono">
                                         {new Date(notif.time).toLocaleTimeString()}
                                     </span>
                                 </div>
+                                <button
+                                    onClick={() => handleDelete(notif.id)}
+                                    className="absolute top-4 right-4 p-1 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
                             </div>
                         ))
                     ) : (

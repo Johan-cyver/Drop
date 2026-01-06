@@ -22,6 +22,18 @@ export default function NotificationToast() {
             const id = Math.random().toString(36).substr(2, 9);
             setToasts(prev => [...prev, { id, message, type }]);
 
+            // Play sound if enabled
+            const soundEnabled = localStorage.getItem('sound_enabled') !== 'false';
+            if (soundEnabled && (type === 'success' || message.includes('reward') || message.includes('DC'))) {
+                try {
+                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'); // Premium coin sound
+                    audio.volume = 0.4;
+                    audio.play().catch(e => console.log('Audio play blocked:', e));
+                } catch (err) {
+                    console.log('Audio not supported');
+                }
+            }
+
             setTimeout(() => {
                 removeToast(id);
             }, 5000);

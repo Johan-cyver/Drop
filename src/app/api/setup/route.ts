@@ -84,6 +84,7 @@ export async function GET(req: NextRequest) {
             await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS coins INTEGER DEFAULT 100`);
             await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS impact INTEGER DEFAULT 0`);
             await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS shadow_banned BOOLEAN DEFAULT FALSE`);
+            await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sound_enabled BOOLEAN DEFAULT TRUE`);
         } catch (e) {
             console.log("Users migration error:", e);
         }
