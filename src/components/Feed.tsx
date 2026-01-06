@@ -6,9 +6,10 @@ import { cn, calculateNextDrop, formatCountdown } from '@/lib/utils';
 import Leaderboard from './Leaderboard';
 import TrendingTopics from './TrendingTopics';
 import QuickGuide from './QuickGuide';
-import { HelpCircle, Bell } from 'lucide-react';
+import { HelpCircle, Bell, Target } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import WarRoomWidget from './WarRoomWidget';
 
 export default function Feed({
     posts,
@@ -199,6 +200,11 @@ export default function Feed({
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             className="space-y-4"
                         >
+                            {/* Mobile War Room Entry */}
+                            <div className="lg:hidden">
+                                <WarRoomWidget />
+                            </div>
+
                             {filter === 'trending' ? (
                                 <div className="space-y-8 py-4">
                                     <TrendingTopics compact />
