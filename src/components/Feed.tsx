@@ -191,6 +191,11 @@ export default function Feed({
 
                 {/* Posts Stream / Trending View */}
                 <div className="flex flex-col gap-4 px-4 lg:px-6">
+                    {/* Mobile War Room Entry - Pinned above feed content */}
+                    <div className="lg:hidden mb-2">
+                        <WarRoomWidget />
+                    </div>
+
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={filter}
@@ -200,11 +205,6 @@ export default function Feed({
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             className="space-y-4"
                         >
-                            {/* Mobile War Room Entry */}
-                            <div className="lg:hidden">
-                                <WarRoomWidget />
-                            </div>
-
                             {filter === 'trending' ? (
                                 <div className="space-y-8 py-4">
                                     <TrendingTopics compact />

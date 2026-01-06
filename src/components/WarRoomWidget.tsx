@@ -51,7 +51,7 @@ export default function WarRoomWidget() {
                 <div className="flex items-center gap-2">
                     <Target className="w-4 h-4 text-red-500 animate-pulse" />
                     <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white">
-                        War Room
+                        Live Territory Map
                     </h3>
                 </div>
                 <div className="px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-[8px] font-black text-red-500 uppercase flex items-center gap-1">
