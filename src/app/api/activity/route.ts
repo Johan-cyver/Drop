@@ -10,28 +10,21 @@ export async function GET(req: NextRequest) {
 
         if (!deviceId) return NextResponse.json({ error: 'Device ID required' }, { status: 400 });
 
-        // Fetch upvotes on MY posts (excluding my own votes if any)
         const notificationsRes = await sql`
-            SELECT 
-                c.id as confession_id, 
-                c.content, 
-                COUNT(v.value) as count,
-                MAX(v.created_at) as last_activity
-            FROM confessions c
-            JOIN votes v ON v.confession_id = c.id
-            WHERE c.device_id = ${deviceId} AND v.value = 1 AND v.device_id != ${deviceId}
-            GROUP BY c.id, c.content
-            ORDER BY last_activity DESC
-            LIMIT 20
+            SELECT * FROM notifications 
+            WHERE device_id = ${deviceId} 
+            ORDER BY created_at DESC 
+            LIMIT 30
         `;
 
-        const notifications = notificationsRes.rows;
-
-        const formatted = notifications.map(n => ({
-            id: n.confession_id,
-            type: 'upvote',
-            message: `${n.count} people liked your drop: "${n.content.slice(0, 20)}..."`,
-            time: n.last_activity
+        const formatted = notificationsRes.rows.map(n => ({
+            id: n.id,
+            type: n.type,
+            message: n.message,
+            amount: n.amount,
+            confession_id: n.confession_id,
+            is_read: n.is_read,
+            time: n.created_at
         }));
 
         return NextResponse.json({ notifications: formatted });

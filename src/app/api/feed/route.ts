@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
             LEFT JOIN users u ON u.device_id = c.device_id
             WHERE c.status = 'LIVE' 
                 AND c.college_id = $2
-                AND c.is_open = false -- STRICT SEPARATION: Only anonymous/closed drops
+                AND (c.is_open = false OR c.device_id = $1) -- Author can see their own "open/revealed" drops
                 AND (c.expires_at IS NULL OR c.expires_at > NOW())
             ORDER BY c.created_at DESC
             LIMIT 200

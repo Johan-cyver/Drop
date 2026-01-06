@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import DropCoinIcon from './DropCoinIcon';
 
 export default function Leaderboard({ compact = false }: { compact?: boolean }) {
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -39,8 +40,8 @@ export default function Leaderboard({ compact = false }: { compact?: boolean }) 
                                 <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest truncate">{college.student_count} Members</p>
                             </div>
                             <div className="text-right flex-shrink-0">
-                                <span className="text-[10px] font-black text-brand-glow block uppercase whitespace-nowrap">
-                                    {(parseInt(college.total_wealth || '0') / 1000).toFixed(1)}K DC
+                                <span className="text-[10px] font-black text-brand-glow flex items-center gap-1 justify-end uppercase whitespace-nowrap">
+                                    {(parseInt(college.total_wealth || '0') / 1000).toFixed(1)}K <DropCoinIcon size="xs" />
                                 </span>
                             </div>
                         </div>

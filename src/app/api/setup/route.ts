@@ -241,14 +241,17 @@ export async function GET(req: NextRequest) {
             console.log("Peeks migration error (likely already applied):", e);
         }
 
-        // 10. The Pulse Table (Real-time activity)
+        // 11. Notifications Table
         await query(`
-            CREATE TABLE IF NOT EXISTS activity_sessions (
-                device_id TEXT PRIMARY KEY,
-                college_id TEXT,
-                viewing_confession_id TEXT,
-                is_typing BOOLEAN DEFAULT FALSE,
-                last_active_at TIMESTAMP DEFAULT NOW()
+            CREATE TABLE IF NOT EXISTS notifications (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                device_id TEXT NOT NULL,
+                type TEXT NOT NULL,
+                message TEXT NOT NULL,
+                amount INTEGER,
+                confession_id TEXT,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT NOW()
             );
         `);
 

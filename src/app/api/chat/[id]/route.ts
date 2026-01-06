@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { sql, query } from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
                 // Participant Reward (2 Impact = 200 Coins)
                 await sql`UPDATE users SET impact = impact + 2, coins = coins + 200 WHERE device_id = ${device_id}`;
                 await sql`INSERT INTO reward_tracking (confession_id, device_id, action_type) VALUES (${confessionId}, ${device_id}, ${actionType})`;
+                await createNotification(device_id, 'coin_reward', `You earned +0.2K DC for joining the lounge!`, 200, confessionId);
             }
         }
 

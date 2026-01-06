@@ -3,10 +3,12 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import DropCoinIcon from './DropCoinIcon';
 
 export default function Navbar({ onCompose, onFeedback }: { onCompose: () => void; onFeedback?: () => void }) {
     const pathname = usePathname();
     const [userAvatar, setUserAvatar] = useState<string | null>(null);
+    const [userCoins, setUserCoins] = useState<number>(0);
 
     useEffect(() => {
         const did = localStorage.getItem('device_id');
@@ -15,6 +17,7 @@ export default function Navbar({ onCompose, onFeedback }: { onCompose: () => voi
                 .then(res => res.json())
                 .then(data => {
                     if (data.user?.avatar) setUserAvatar(data.user.avatar);
+                    if (data.stats?.coins) setUserCoins(data.stats.coins);
                 })
                 .catch(e => console.error(e));
         }
@@ -31,13 +34,19 @@ export default function Navbar({ onCompose, onFeedback }: { onCompose: () => voi
     return (
         <aside className="hidden lg:flex lg:col-span-3 flex-col w-full h-screen sticky top-0 border-r border-white/5 bg-dark-950/30 backdrop-blur-xl z-50 pt-8 pb-6 justify-between">
             {/* Logo Area */}
-            <div className="px-6 mb-8">
+            <div className="px-6 mb-8 flex items-center justify-between">
                 <Link href="/my-logic" className="flex items-center gap-3 group cursor-pointer">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-start to-brand-end flex items-center justify-center shadow-lg group-hover:shadow-brand-glow/20 transition-all duration-300 overflow-hidden">
                         <span className="text-white font-bold text-lg">D</span>
                     </div>
                     <h1 className="text-xl font-bold tracking-tight text-white group-hover:text-brand-glow transition-colors">The Drop</h1>
                 </Link>
+                <div className="flex flex-col items-end">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-glow/10 border border-brand-glow/20 shadow-sm">
+                        <span className="text-xs font-black text-brand-glow">{(userCoins / 1000).toFixed(1)}K</span>
+                        <DropCoinIcon size="sm" />
+                    </div>
+                </div>
             </div>
 
             {/* Nav Links */}

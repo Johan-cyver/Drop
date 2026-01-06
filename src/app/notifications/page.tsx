@@ -2,13 +2,35 @@
 
 import { useState, useEffect } from 'react';
 import AmbientBackground from '@/components/AmbientBackground';
+import { cn } from '@/lib/utils';
 import Navbar from '@/components/Navbar';
 import Widgets from '@/components/Widgets';
 import MobileDock from '@/components/MobileDock';
 import ComposeModal from '@/components/ComposeModal';
-import { Bell, Heart, MessageCircle, Zap, MessageSquare } from 'lucide-react';
+import { Bell, Heart, MessageCircle, Zap, MessageSquare, PlusCircle, Coins } from 'lucide-react';
 import { showToast } from '@/components/NotificationToast';
 import FeedbackModal from '@/components/FeedbackModal';
+import DropCoinIcon from '@/components/DropCoinIcon';
+
+const TypeIcon = ({ type }: { type: string }) => {
+    switch (type) {
+        case 'drop_posted': return <PlusCircle className="w-5 h-5" />;
+        case 'upvote': return <Heart className="w-5 h-5 fill-current" />;
+        case 'reaction': return <Zap className="w-5 h-5 fill-current" />;
+        case 'coin_reward': return <DropCoinIcon size="sm" />;
+        default: return <Bell className="w-5 h-5" />;
+    }
+};
+
+const TypeColor = (type: string) => {
+    switch (type) {
+        case 'drop_posted': return 'bg-emerald-500/20 text-emerald-400';
+        case 'upvote': return 'bg-rose-500/20 text-rose-400';
+        case 'reaction': return 'bg-amber-500/20 text-amber-400';
+        case 'coin_reward': return 'bg-brand-glow/10 text-brand-glow';
+        default: return 'bg-white/5 text-gray-400';
+    }
+};
 
 export default function NotificationsPage() {
     const [isComposeOpen, setIsComposeOpen] = useState(false);
@@ -62,8 +84,8 @@ export default function NotificationsPage() {
                     ) : notifications.length > 0 ? (
                         notifications.map((notif: any) => (
                             <div key={notif.id} className="glass-card p-4 rounded-xl flex items-start gap-4 animate-in fade-in slide-in-from-bottom-2">
-                                <div className="w-10 h-10 rounded-full bg-brand-glow/20 flex items-center justify-center text-brand-glow">
-                                    <Heart className="w-5 h-5 fill-current" />
+                                <div className={cn("w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0", TypeColor(notif.type))}>
+                                    <TypeIcon type={notif.type} />
                                 </div>
                                 <div>
                                     <p className="text-gray-200 text-sm leading-relaxed mb-1">

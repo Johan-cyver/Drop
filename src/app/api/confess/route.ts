@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { randomUUID } from 'crypto';
+import { createNotification } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,6 +107,14 @@ export async function POST(req: NextRequest) {
 
         // 6. Update User Stats (10 Impact = 1000 Coins)
         await query(`UPDATE users SET last_post_at = $1, impact = impact + 10, coins = coins + 1000 WHERE device_id = $2`, [now.toISOString(), device_id]);
+
+        await createNotification(
+            device_id,
+            'drop_posted',
+            `Your drop has been posted! +1.0K DC reward.`,
+            1000,
+            id
+        );
 
         if (status === 'FLAGGED') {
             return NextResponse.json({

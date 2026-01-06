@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
                     `INSERT INTO reward_tracking (confession_id, device_id, action_type) VALUES ($1, $2, $3)`,
                     [confession_id, device_id, reactorAction]
                 );
+                await createNotification(device_id, 'coin_reward', `You earned +0.1K DC for reacting!`, 100, confession_id);
             }
 
             // Author Reward (2 Impact = 200 Coins)
@@ -63,6 +65,7 @@ export async function POST(req: NextRequest) {
                         `INSERT INTO reward_tracking (confession_id, device_id, action_type) VALUES ($1, $2, $3)`,
                         [confession_id, device_id, actionType]
                     );
+                    await createNotification(authorId, 'reaction', `Someone reacted with ${emoji} to your drop! +0.2K DC earned.`, 200, confession_id);
                 }
             }
 
