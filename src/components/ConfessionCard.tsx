@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import ShareModal from './ShareModal';
 import DropChat from './DropChat';
+import { Haptics } from '@/lib/haptics';
 
 export interface Post {
     id: string;
@@ -109,6 +110,7 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
     }, [post.reactions, post.id]);
 
     const handleReaction = async (emoji: string) => {
+        Haptics.light();
         // Optimistic
         const existing = reactions.find(r => r.emoji === emoji);
         let newReactions;
@@ -550,7 +552,7 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                     <div className="flex items-center justify-between relative z-10 md:pt-2">
                         <div className="flex items-center gap-1 bg-white/5 rounded-2xl p-1 md:p-1.5 border border-white/5 backdrop-blur-xl scale-90 md:scale-100 origin-left">
                             <button
-                                onClick={(e) => { e.preventDefault(); onVote(post.id, 1); }}
+                                onClick={(e) => { e.preventDefault(); Haptics.light(); onVote(post.id, 1); }}
                                 className={cn(
                                     "flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-xl transition-all active:scale-95",
                                     voteStatus === 1 ? 'bg-brand-glow text-white shadow-lg shadow-brand-glow/20' : 'text-gray-500 hover:text-white'
@@ -561,7 +563,7 @@ export default function ConfessionCard({ post, onVote, hideIdentity = false }: C
                             </button>
 
                             <button
-                                onClick={(e) => { e.preventDefault(); onVote(post.id, -1); }}
+                                onClick={(e) => { e.preventDefault(); Haptics.light(); onVote(post.id, -1); }}
                                 className={cn(
                                     "p-1.5 md:p-2 rounded-xl transition-all active:scale-95",
                                     voteStatus === -1 ? 'text-red-400 bg-red-500/10' : 'text-gray-700 hover:text-red-400'

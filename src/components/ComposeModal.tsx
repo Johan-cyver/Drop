@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import CameraCapture from './CameraCapture';
 import HelplineModal from './HelplineModal';
+import { Haptics } from '@/lib/haptics';
+import { showToast } from './NotificationToast';
 
 interface ComposeModalProps {
     isOpen: boolean;
@@ -35,6 +37,9 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
     const [blurredWords, setBlurredWords] = useState<number[]>([]); // Indices of words to blur
     const [isPollOpen, setIsPollOpen] = useState(false);
     const [pollOptions, setPollOptions] = useState(['', '']);
+    const [selectedStamp, setSelectedStamp] = useState('General');
+
+    const STAMPS = ['General', 'Spicy', 'War', 'Gossip', 'Rant', 'Confession'];
 
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -83,6 +88,7 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
 
     const handleSubmit = async () => {
         if (!isValid || isSubmitting) return;
+        Haptics.heavy();
 
         setIsSubmitting(true);
         try {
@@ -96,7 +102,7 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                 poll_options: isPollOpen ? pollOptions.filter(o => o.trim()) : undefined
             };
 
-            const result = await onSubmit(content, '#General', image || undefined, options);
+            const result = await onSubmit(content, `#${selectedStamp}`, image || undefined, options);
 
             if (result && result.safety_warning) {
                 setShowHelpline(true);
@@ -177,6 +183,27 @@ export default function ComposeModal({ isOpen, onClose, onSubmit, deviceId }: Co
                         placeholder="What's the tea? ☕️"
                         maxLength={280}
                     />
+
+                    {/* Stamp Selector */}
+                    <div className="mb-6">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-3 px-2">Apply Stamp</p>
+                        <div className="flex flex-wrap gap-2">
+                            {STAMPS.map(stamp => (
+                                <button
+                                    key={stamp}
+                                    onClick={() => setSelectedStamp(stamp)}
+                                    className={cn(
+                                        "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border",
+                                        selectedStamp === stamp
+                                            ? "bg-brand-glow text-white border-brand-glow shadow-lg shadow-brand-glow/20"
+                                            : "bg-white/5 text-gray-500 border-white/5 hover:bg-white/10"
+                                    )}
+                                >
+                                    {stamp}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
                     {/* Surgical Blur Preview */}
                     <AnimatePresence>

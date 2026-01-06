@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, CheckCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Haptics } from '@/lib/haptics';
+import CoinBurst from './CoinBurst';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
 
@@ -15,6 +17,7 @@ interface Toast {
 
 export default function NotificationToast() {
     const [toasts, setToasts] = useState<Toast[]>([]);
+    const [burstTrigger, setBurstTrigger] = useState(false);
 
     useEffect(() => {
         const handleToast = (e: any) => {
@@ -22,9 +25,25 @@ export default function NotificationToast() {
             const id = Math.random().toString(36).substr(2, 9);
             setToasts(prev => [...prev, { id, message, type }]);
 
-            // Play sound if enabled
+            // Haptics, Sound & Visual Economy
             const soundEnabled = localStorage.getItem('sound_enabled') !== 'false';
-            if (soundEnabled && (type === 'success' || message.includes('reward') || message.includes('DC'))) {
+            const isReward = type === 'success' ||
+                message.includes('reward') ||
+                message.includes('DC') ||
+                message.includes('earned') ||
+                message.includes('+');
+
+            if (isReward) {
+                Haptics.success();
+                setBurstTrigger(false);
+                setTimeout(() => setBurstTrigger(true), 10);
+            } else if (type === 'error') {
+                Haptics.error();
+            } else {
+                Haptics.light();
+            }
+
+            if (soundEnabled && isReward) {
                 try {
                     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'); // Premium coin sound
                     audio.volume = 0.4;
@@ -98,6 +117,7 @@ export default function NotificationToast() {
                     </motion.div>
                 ))}
             </AnimatePresence>
+            <CoinBurst trigger={burstTrigger} />
         </div>
     );
 }

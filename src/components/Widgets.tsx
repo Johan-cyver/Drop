@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Timer } from 'lucide-react';
 import Leaderboard from './Leaderboard';
-import TrendingTopics from './TrendingTopics';
+import WarRoomWidget from './WarRoomWidget';
 
 export default function Widgets() {
     const [timeLeft, setTimeLeft] = useState('');
@@ -41,8 +41,8 @@ export default function Widgets() {
             {/* College Leaderboard */}
             <Leaderboard />
 
-            {/* Real Trending Topics */}
-            <TrendingTopics />
+            {/* War Room Territory Map */}
+            <WarRoomWidget />
 
             <div className="mt-auto pt-6 text-center border-t border-white/5">
                 <p className="text-[10px] text-gray-600 font-mono tracking-tighter">Safe. Anonymous. Encrypted.</p>
